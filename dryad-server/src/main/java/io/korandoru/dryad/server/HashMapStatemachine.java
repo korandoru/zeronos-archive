@@ -18,6 +18,8 @@ package io.korandoru.dryad.server;
 
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
+import io.korandoru.dryad.proto.PutRequest;
+import io.korandoru.dryad.proto.PutResponse;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
@@ -31,6 +33,7 @@ import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.server.RaftServer;
+import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
@@ -39,10 +42,6 @@ import org.apache.ratis.util.NetUtils;
 @Slf4j
 public class HashMapStatemachine extends BaseStateMachine {
     private final Map<String, String> dataMap = new ConcurrentHashMap<>();
-    {
-        dataMap.putIfAbsent("name", "dataMap");
-        dataMap.putIfAbsent("type", "hashMap");
-    }
 
     @Override
     public CompletableFuture<Message> query(Message request) {
@@ -67,6 +66,30 @@ public class HashMapStatemachine extends BaseStateMachine {
         }
 
         return CompletableFuture.completedFuture(Message.valueOf(responseBuilder.build().toByteString()));
+    }
+
+    @Override
+    public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
+        final var response = Message.valueOf(PutResponse.getDefaultInstance().toByteString());
+        final var requestBuilder = PutRequest.newBuilder();
+        final var entry = trx.getLogEntry();
+        final var request = entry.getStateMachineLogEntry();
+        try {
+            requestBuilder.mergeFrom(request.getLogData());
+        } catch (InvalidProtocolBufferException e) {
+            log.warn("Receiving invalid message: {}", request, e);
+            return CompletableFuture.completedFuture(response);
+        }
+
+        final var k = requestBuilder.getKey().toStringUtf8();
+        final var v = requestBuilder.getValue().toStringUtf8();
+        dataMap.put(k, v);
+
+        // update the last applied term and index
+        final long index = entry.getIndex();
+        updateLastAppliedTermIndex(entry.getTerm(), index);
+
+        return CompletableFuture.completedFuture(response);
     }
 
     public static void main(String[] args) throws Exception {

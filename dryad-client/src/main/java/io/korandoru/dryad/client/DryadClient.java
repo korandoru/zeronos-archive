@@ -18,7 +18,8 @@ package io.korandoru.dryad.client;
 
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
-import java.util.List;
+import io.korandoru.dryad.proto.PutRequest;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.Parameters;
@@ -47,16 +48,25 @@ public class DryadClient {
             .build();
 
         try (client) {
-            final var keys = List.of("name", "type", "nonexisting");
-            for (var k : keys) {
+            final var dataMap = Map.of(
+                "name", "dryad",
+                "type", "distributed system");
+
+            for (var e : dataMap.entrySet()) {
+                final var request = PutRequest.newBuilder()
+                    .setKey(ByteString.copyFromUtf8(e.getKey()))
+                    .setValue(ByteString.copyFromUtf8(e.getValue()))
+                    .build();
+                final var response = client.io().send(Message.valueOf(request.toByteString()));
+                System.out.println("Put: " + response.getMessage().getContent());
+            }
+
+            for (var k : dataMap.keySet()) {
                 final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
                 final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
                 final var v = GetResponse.parseFrom(response.getMessage().getContent());
-                if (v.getFound()) {
-                    System.out.println(v);
-                } else {
-                    System.out.println("Query with key = " + k + ", not found.");
-                }
+                System.out.println("Get: " + k);
+                System.out.println(v);
             }
         }
     }
