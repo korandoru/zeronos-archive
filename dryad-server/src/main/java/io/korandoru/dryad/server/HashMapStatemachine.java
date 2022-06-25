@@ -76,7 +76,7 @@ public class HashMapStatemachine extends BaseStateMachine {
         final var properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
 
-        final var groupId = RaftGroupId.valueOf(UUID.randomUUID());
+        final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
         final var stateMachine = new HashMapStatemachine();
         final var server = RaftServer.newBuilder()
             .setGroup(RaftGroup.valueOf(groupId, peer))

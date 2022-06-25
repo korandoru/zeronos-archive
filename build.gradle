@@ -76,6 +76,8 @@ project('dryad-server') {
 
 project('dryad-client') {
     dependencies {
-        implementation project(':dryad-proto')
+        implementation project(path: ':dryad-proto', configuration: 'shadow')
+        implementation 'org.apache.ratis:ratis-server'
+        implementation 'org.apache.ratis:ratis-grpc'
     }
 }
