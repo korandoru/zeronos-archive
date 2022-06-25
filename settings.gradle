@@ -1,1 +1,4 @@
 rootProject.name = 'dryad'
+include 'dryad-client'
+include 'dryad-proto'
+include 'dryad-server'
