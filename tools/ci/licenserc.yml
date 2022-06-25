@@ -18,3 +18,5 @@ header:
   paths:
     - '**/*.java'
     - '**/*.yml'
+  paths-ignore:
+    - '**/generated/**/*.java'
