@@ -40,6 +40,7 @@ import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.server.RaftServer;
+import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.server.protocol.TermIndex;
 import org.apache.ratis.server.storage.RaftStorage;
 import org.apache.ratis.statemachine.TransactionContext;
@@ -155,6 +156,8 @@ public class HashMapStatemachine extends BaseStateMachine {
 
         final var properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
+        RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
+        RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, 1024);
 
         final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
         final var stateMachine = new HashMapStatemachine();
