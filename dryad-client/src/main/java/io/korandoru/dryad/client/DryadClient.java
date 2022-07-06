@@ -52,6 +52,14 @@ public class DryadClient {
                 "name", "dryad",
                 "type", "distributed system");
 
+            for (var k : dataMap.keySet()) {
+                final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
+                final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
+                final var v = GetResponse.parseFrom(response.getMessage().getContent());
+                System.out.println("Get: " + k);
+                System.out.println(v);
+            }
+
             for (var e : dataMap.entrySet()) {
                 final var request = PutRequest.newBuilder()
                     .setKey(ByteString.copyFromUtf8(e.getKey()))
