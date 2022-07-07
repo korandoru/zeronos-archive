@@ -1,5 +1,5 @@
 [storage]
-basedir = 'data'
+basedir = "/tmp/raft-server/"
 
 [snapshot]
 threshold = 1024
