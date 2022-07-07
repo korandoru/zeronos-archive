@@ -69,6 +69,7 @@ project('dryad-proto') {
 
 project('dryad-server') {
     dependencies {
+        implementation project(':dryad-config')
         implementation project(path: ':dryad-proto', configuration: 'shadow')
         implementation 'org.apache.ratis:ratis-server'
         implementation 'org.apache.ratis:ratis-grpc'
@@ -80,5 +81,12 @@ project('dryad-client') {
         implementation project(path: ':dryad-proto', configuration: 'shadow')
         implementation 'org.apache.ratis:ratis-server'
         implementation 'org.apache.ratis:ratis-grpc'
+    }
+}
+
+project('dryad-config') {
+    dependencies {
+        implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
+        implementation 'com.jayway.jsonpath:json-path'
     }
 }

@@ -16,6 +16,7 @@
 
 package io.korandoru.dryad.server;
 
+import io.korandoru.dryad.config.DryadConfig;
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
 import io.korandoru.dryad.proto.PutRequest;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
@@ -47,6 +49,7 @@ import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
 import org.apache.ratis.statemachine.impl.SimpleStateMachineStorage;
 import org.apache.ratis.statemachine.impl.SingleFileSnapshotInfo;
+import org.apache.ratis.thirdparty.com.google.common.io.Resources;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.ratis.util.JavaUtils;
@@ -151,13 +154,23 @@ public class HashMapStatemachine extends BaseStateMachine {
     }
 
     public static void main(String[] args) throws Exception {
+        final var config = DryadConfig.defaultConfig();
+
         final var peer = RaftPeer.newBuilder().setAddress("127.0.0.1:10024").setId("n0").build();
         final var port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
 
         final var properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
-        RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
-        RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, 1024);
+
+        if (config.snapshotThreshold() > 0) {
+            RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
+            RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, config.snapshotThreshold());
+        }
+
+        if (!config.storageBasedir().isEmpty()) {
+            final var basedir = new File(config.storageBasedir());
+            RaftServerConfigKeys.setStorageDir(properties, Collections.singletonList(basedir));
+        }
 
         final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
         final var stateMachine = new HashMapStatemachine();
