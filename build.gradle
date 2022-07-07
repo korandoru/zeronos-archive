@@ -3,7 +3,7 @@ plugins {
     id 'java'
     id 'java-library'
     id 'com.adarshr.test-logger' version '3.2.0'
-    id 'com.diffplug.spotless' version '6.7.1'
+    id 'com.diffplug.spotless' version '6.8.0'
     id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'com.google.protobuf' version '0.8.18'
     id 'nebula.dependency-recommender' version '9.0.2'
@@ -33,6 +33,26 @@ subprojects {
 
     sourceCompatibility = 17
     targetCompatibility = 17
+
+    spotless {
+        format 'misc', {
+            // define the files to apply `misc` to
+            target '*.gradle', '*.md', '.gitignore'
+
+            // define the steps to apply to those files
+            trimTrailingWhitespace()
+            indentWithSpaces(4)
+            endWithNewline()
+        }
+
+        java {
+            importOrder('', 'static ')
+            removeUnusedImports()
+            trimTrailingWhitespace()
+            indentWithSpaces(4)
+            endWithNewline()
+        }
+    }
 
     dependencies {
         compileOnly 'org.projectlombok:lombok'
