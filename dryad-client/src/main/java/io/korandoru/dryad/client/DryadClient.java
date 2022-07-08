@@ -19,7 +19,7 @@ package io.korandoru.dryad.client;
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
 import io.korandoru.dryad.proto.PutRequest;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.Parameters;
@@ -48,9 +48,10 @@ public class DryadClient {
             .build();
 
         try (client) {
-            final var dataMap = Map.of(
-                "name", "dryad",
-                "type", "distributed system");
+            final var dataMap = new HashMap<String, String>();
+            for (int i = 0; i < 128; i++) {
+                dataMap.put("k" + i, UUID.randomUUID().toString());
+            }
 
             for (var k : dataMap.keySet()) {
                 final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
