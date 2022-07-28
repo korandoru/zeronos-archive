@@ -16,18 +16,12 @@
 
 package io.korandoru.dryad.server;
 
-import io.korandoru.dryad.config.DryadConfig;
+import io.korandoru.dryad.config.ServerConfig;
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
 import io.korandoru.dryad.proto.PutRequest;
 import io.korandoru.dryad.proto.PutResponse;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Scanner;
@@ -43,65 +37,15 @@ import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.server.RaftServer;
 import org.apache.ratis.server.RaftServerConfigKeys;
-import org.apache.ratis.server.protocol.TermIndex;
-import org.apache.ratis.server.storage.RaftStorage;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
-import org.apache.ratis.statemachine.impl.SimpleStateMachineStorage;
-import org.apache.ratis.statemachine.impl.SingleFileSnapshotInfo;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.ratis.util.JavaUtils;
 import org.apache.ratis.util.NetUtils;
 
 @Slf4j
 public class HashMapStatemachine extends BaseStateMachine {
     private final Map<String, String> dataMap = new ConcurrentHashMap<>();
-    private final SimpleStateMachineStorage storage = new SimpleStateMachineStorage();
-
-    @Override
-    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
-        super.initialize(raftServer, raftGroupId, raftStorage);
-        this.storage.init(raftStorage);
-        load(storage.getLatestSnapshot());
-    }
-
-    @Override
-    public void reinitialize() throws IOException {
-        load(storage.getLatestSnapshot());
-    }
-
-    private void load(SingleFileSnapshotInfo snapshot) throws IOException {
-        if (snapshot == null) {
-            log.warn("The snapshot info is null.");
-            return;
-        }
-
-        final File snapshotFile = snapshot.getFile().getPath().toFile();
-        if (!snapshotFile.exists()) {
-            log.warn("The snapshot file {} does not exist for snapshot {}", snapshotFile, snapshot);
-            return;
-        }
-
-        final TermIndex last = SimpleStateMachineStorage.getTermIndexFromSnapshotFile(snapshotFile);
-        try (final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(snapshotFile.toPath())))) {
-            //set the last applied termIndex to the termIndex of the snapshot
-            setLastAppliedTermIndex(last);
-            this.dataMap.putAll(JavaUtils.cast(in.readObject()));
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    @Override
-    public long takeSnapshot() throws IOException {
-        final TermIndex last = getLastAppliedTermIndex();
-        final File snapshotFile = storage.getSnapshotFile(last.getTerm(), last.getIndex());
-        try (final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(snapshotFile.toPath())))) {
-            out.writeObject(this.dataMap);
-        }
-        return last.getIndex();
-    }
 
     @Override
     public CompletableFuture<Message> query(Message request) {
@@ -153,18 +97,13 @@ public class HashMapStatemachine extends BaseStateMachine {
     }
 
     public static void main(String[] args) throws Exception {
-        final var config = DryadConfig.defaultConfig();
+        final var config = ServerConfig.defaultConfig();
 
         final var peer = RaftPeer.newBuilder().setAddress("127.0.0.1:10024").setId("n0").build();
         final var port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
 
         final var properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
-
-        if (config.snapshotThreshold() > 0) {
-            RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
-            RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, config.snapshotThreshold());
-        }
 
         if (!config.storageBasedir().isEmpty()) {
             final var basedir = new File(config.storageBasedir());

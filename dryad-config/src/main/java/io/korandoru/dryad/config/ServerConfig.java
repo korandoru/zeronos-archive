@@ -22,31 +22,27 @@ import com.jayway.jsonpath.JsonPath;
 import java.io.IOException;
 import java.net.URL;
 
-public class DryadConfig {
+public class ServerConfig {
 
     private final DocumentContext context;
 
-    public static DryadConfig defaultConfig() throws IOException {
-        return readConfig(DryadConfig.class.getResource("/dryad.toml"));
+    public static ServerConfig defaultConfig() throws IOException {
+        return readConfig(ServerConfig.class.getResource("/server.toml"));
     }
 
-    public static DryadConfig readConfig(URL source) throws IOException {
+    public static ServerConfig readConfig(URL source) throws IOException {
         final var mapper = new TomlMapper();
         final var root = mapper.readTree(source);
         final var context = JsonPath.parse(root.toPrettyString());
-        return new DryadConfig(context);
+        return new ServerConfig(context);
     }
 
-    private DryadConfig(DocumentContext context) {
+    private ServerConfig(DocumentContext context) {
         this.context = context;
     }
 
     public String storageBasedir() {
         return context.read("$.storage.basedir");
-    }
-
-    public long snapshotThreshold() {
-        return context.read("$.snapshot.threshold", Long.TYPE);
     }
 
     @Override

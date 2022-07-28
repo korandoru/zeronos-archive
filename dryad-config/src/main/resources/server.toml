@@ -1,5 +1,2 @@
 [storage]
 basedir = "/tmp/raft-server/"
-
-[snapshot]
-threshold = 1024
