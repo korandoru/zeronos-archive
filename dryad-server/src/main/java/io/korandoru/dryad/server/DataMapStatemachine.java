@@ -16,35 +16,22 @@
 
 package io.korandoru.dryad.server;
 
-import io.korandoru.dryad.config.ServerConfig;
 import io.korandoru.dryad.proto.GetRequest;
 import io.korandoru.dryad.proto.GetResponse;
 import io.korandoru.dryad.proto.PutRequest;
 import io.korandoru.dryad.proto.PutResponse;
-import java.io.File;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ratis.conf.RaftProperties;
-import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.Message;
-import org.apache.ratis.protocol.RaftGroup;
-import org.apache.ratis.protocol.RaftGroupId;
-import org.apache.ratis.protocol.RaftPeer;
-import org.apache.ratis.server.RaftServer;
-import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.ratis.util.NetUtils;
 
 @Slf4j
-public class HashMapStatemachine extends BaseStateMachine {
+public class DataMapStatemachine extends BaseStateMachine {
     private final Map<String, String> dataMap = new ConcurrentHashMap<>();
 
     @Override
@@ -94,34 +81,5 @@ public class HashMapStatemachine extends BaseStateMachine {
         updateLastAppliedTermIndex(entry.getTerm(), index);
 
         return CompletableFuture.completedFuture(response);
-    }
-
-    public static void main(String[] args) throws Exception {
-        final var config = ServerConfig.defaultConfig();
-
-        final var peer = RaftPeer.newBuilder().setAddress("127.0.0.1:10024").setId("n0").build();
-        final var port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
-
-        final var properties = new RaftProperties();
-        GrpcConfigKeys.Server.setPort(properties, port);
-
-        if (!config.storageBasedir().isEmpty()) {
-            final var basedir = new File(config.storageBasedir());
-            RaftServerConfigKeys.setStorageDir(properties, Collections.singletonList(basedir));
-        }
-
-        final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
-        final var stateMachine = new HashMapStatemachine();
-        final var server = RaftServer.newBuilder()
-            .setGroup(RaftGroup.valueOf(groupId, peer))
-            .setProperties(properties)
-            .setServerId(peer.getId())
-            .setStateMachine(stateMachine)
-            .build();
-        try (server) {
-            server.start();
-            // exit when any input entered
-            new Scanner(System.in).nextLine();
-        }
     }
 }

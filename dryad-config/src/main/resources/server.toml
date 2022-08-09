@@ -1,2 +1,5 @@
 [storage]
 basedir = "/tmp/raft-server/"
+
+[cluster]
+selector = "n0"
