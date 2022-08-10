@@ -20,36 +20,40 @@ import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import io.korandoru.dryad.config.model.RaftPeerModel;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
+import java.util.UUID;
 
-public class ServerConfig {
+public class ClusterConfig {
 
     private final DocumentContext context;
 
-    public static ServerConfig defaultConfig() throws IOException {
-        return readConfig(ServerConfig.class.getResource("/server.toml"));
+    public static ClusterConfig defaultConfig() throws IOException {
+        return readConfig(ClusterConfig.class.getResource("/cluster.toml"));
     }
 
-    public static ServerConfig readConfig(URL source) throws IOException {
+    public static ClusterConfig readConfig(URL source) throws IOException {
         final var mapper = new TomlMapper();
         final var root = mapper.readTree(source);
         final var config = Configuration.builder().mappingProvider(new JacksonMappingProvider()).build();
         final var context = JsonPath.using(config).parse(root.toPrettyString());
-        return new ServerConfig(context);
+        return new ClusterConfig(context);
     }
 
-    private ServerConfig(DocumentContext context) {
+    private ClusterConfig(DocumentContext context) {
         this.context = context;
     }
 
-    public String storageBasedir() {
-        return context.read("$.storage.basedir");
+    public UUID groupId() {
+        return UUID.fromString(context.read("$.group.id"));
     }
 
-    public String selector() {
-        return context.read("$.cluster.selector");
+    public List<RaftPeerModel> peers() {
+        return context.read("$.group.peer", new TypeRef<>() {});
     }
 
     @Override

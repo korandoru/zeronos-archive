@@ -1,0 +1,6 @@
+[group]
+id = "02511d47-d67c-49a3-9011-abb3109a44c1"
+
+[[group.peer]]
+id = "n0"
+address = "127.0.0.1:21096"
