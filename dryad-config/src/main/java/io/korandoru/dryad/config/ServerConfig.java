@@ -48,10 +48,6 @@ public class ServerConfig {
         return context.read("$.storage.basedir");
     }
 
-    public String selector() {
-        return context.read("$.cluster.selector");
-    }
-
     @Override
     public String toString() {
         return context.jsonString();
