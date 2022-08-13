@@ -63,6 +63,7 @@ subprojects {
         testCompileOnly 'org.projectlombok:lombok'
         testAnnotationProcessor 'org.projectlombok:lombok'
 
+        implementation 'com.google.guava:guava'
         implementation 'org.slf4j:slf4j-api'
         implementation 'org.slf4j:slf4j-simple'
     }
@@ -93,7 +94,6 @@ project('dryad-server') {
     dependencies {
         implementation project(':dryad-config')
         implementation project(path: ':dryad-proto', configuration: 'shadow')
-        implementation 'info.picocli:picocli'
         implementation 'org.apache.ratis:ratis-server'
         implementation 'org.apache.ratis:ratis-grpc'
     }
@@ -111,5 +111,23 @@ project('dryad-config') {
     dependencies {
         implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml'
         implementation 'com.jayway.jsonpath:json-path'
+    }
+}
+
+project('dryad-ctl') {
+    apply plugin: 'application'
+    // this line must go ahead of applying shadow plugin
+    mainClassName = 'io.korandoru.dryad.ctl.DryadMain'
+
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    dependencies {
+        implementation project(':dryad-server')
+        implementation project(':dryad-config')
+        implementation 'info.picocli:picocli'
+    }
+
+    run {
+        standardInput = System.in
     }
 }

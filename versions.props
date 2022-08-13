@@ -1,7 +1,8 @@
 com.fasterxml.jackson.dataformat:* = 2.13.3
+com.google.guava:* = 31.1-jre
 com.google.protobuf:* = 3.21.2
 com.jayway.jsonpath:json-path = 2.7.0
-info.picocli:picocli:4.6.3
+info.picocli:picocli = 4.6.3
 org.apache.ratis:* = 2.3.0
 org.apache.ratis:ratis-thirdparty-misc = 1.0.0
 org.projectlombok:lombok = 1.18.22

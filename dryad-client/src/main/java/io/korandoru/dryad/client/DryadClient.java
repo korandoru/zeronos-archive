@@ -38,12 +38,15 @@ public class DryadClient {
         final var properties = new RaftProperties();
 
         final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
-        final var peer = RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build();
         final var rpc = new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), properties);
 
         final var client = RaftClient.newBuilder()
             .setProperties(properties)
-            .setRaftGroup(RaftGroup.valueOf(groupId, peer))
+            .setRaftGroup(RaftGroup.valueOf(
+                    groupId,
+                    RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build(),
+                    RaftPeer.newBuilder().setAddress("127.0.0.1:21196").setId("n1").build(),
+                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()))
             .setClientRpc(rpc)
             .build();
 

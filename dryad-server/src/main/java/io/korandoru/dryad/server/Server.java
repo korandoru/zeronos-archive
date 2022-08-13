@@ -16,12 +16,14 @@
 
 package io.korandoru.dryad.server;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import io.korandoru.dryad.config.ClusterConfig;
 import io.korandoru.dryad.config.ServerConfig;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Scanner;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.RaftGroup;
@@ -31,33 +33,42 @@ import org.apache.ratis.server.RaftServer;
 import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.util.NetUtils;
 
+@Slf4j
 public class Server implements AutoCloseable {
 
     private final RaftServer server;
 
-    public Server(ServerConfig serverConfig, ClusterConfig clusterConfig) throws Exception {
-        final var peers = clusterConfig.peers();
+    public Server(ServerConfig serverConfig, ClusterConfig clusterConfig, String id) throws Exception {
+        Preconditions.checkNotNull(serverConfig);
+        Preconditions.checkNotNull(clusterConfig);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(id));
+
+        final var peers = clusterConfig.peers().stream()
+                .map(model -> RaftPeer.newBuilder().setId(model.id()).setAddress(model.address()).build())
+                .toList();
         final var peer = peers.stream()
-                .filter(p -> p.id().equals(serverConfig.selector()))
+                .filter(p -> p.getId().toString().equals(id))
                 .findAny()
                 .orElseThrow(() -> new IllegalArgumentException("This server doesn't belong to a peer."));
-        final var raftPeer = RaftPeer.newBuilder().setId(peer.id()).setAddress(peer.address()).build();
-        final var port = NetUtils.createSocketAddr(raftPeer.getAddress()).getPort();
+        final var port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
 
         final var properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
 
-        final var basedir = new File(serverConfig.storageBasedir(), serverConfig.selector());
+        final var basedir = new File(serverConfig.storageBasedir(), id);
         RaftServerConfigKeys.setStorageDir(properties, Collections.singletonList(basedir));
 
         final var groupId = RaftGroupId.valueOf(clusterConfig.groupId());
+        final var group = RaftGroup.valueOf(groupId, peers);
         final var stateMachine = new DataMapStatemachine();
         this.server = RaftServer.newBuilder()
-                .setGroup(RaftGroup.valueOf(groupId, raftPeer))
+                .setGroup(group)
                 .setProperties(properties)
-                .setServerId(raftPeer.getId())
+                .setServerId(peer.getId())
                 .setStateMachine(stateMachine)
                 .build();
+
+        log.info("Create RaftServer with group: {}", group);
     }
 
     public void start() throws IOException {
@@ -69,12 +80,4 @@ public class Server implements AutoCloseable {
         this.server.close();
     }
 
-    public static void main(String[] args) throws Exception {
-        final var server = new Server(ServerConfig.defaultConfig(), ClusterConfig.defaultConfig());
-        try (server) {
-            server.start();
-            // exit when any input entered
-            new Scanner(System.in).nextLine();
-        }
-    }
 }
