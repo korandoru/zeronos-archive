@@ -93,6 +93,7 @@ project('dryad-server') {
     dependencies {
         implementation project(':dryad-config')
         implementation project(path: ':dryad-proto', configuration: 'shadow')
+        implementation 'info.picocli:picocli'
         implementation 'org.apache.ratis:ratis-server'
         implementation 'org.apache.ratis:ratis-grpc'
     }
