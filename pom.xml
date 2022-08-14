@@ -58,8 +58,8 @@ limitations under the License.
     </distributionManagement>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <spotless.version>2.24.1</spotless.version>
         <lombok.version>1.18.24</lombok.version>
         <surefire.version>3.0.0-M7</surefire.version>
@@ -70,7 +70,7 @@ limitations under the License.
 
     <modules>
 <!--        <module>dryad-client</module>-->
-<!--        <module>dryad-config</module>-->
+        <module>dryad-config</module>
 <!--        <module>dryad-ctl</module>-->
 <!--        <module>dryad-proto</module>-->
 <!--        <module>dryad-server</module>-->
@@ -82,13 +82,11 @@ limitations under the License.
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-toml</artifactId>
                 <version>2.12.7</version>
-                <type>bundle</type>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>3.21.5</version>
-                <type>bundle</type>
             </dependency>
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
@@ -145,6 +143,12 @@ limitations under the License.
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.23.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
