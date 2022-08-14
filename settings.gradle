@@ -1,6 +1,0 @@
-rootProject.name = 'dryad'
-include 'dryad-client'
-include 'dryad-config'
-include 'dryad-ctl'
-include 'dryad-proto'
-include 'dryad-server'

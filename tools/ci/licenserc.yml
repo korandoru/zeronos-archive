@@ -17,6 +17,7 @@ header:
     spdx-id: Apache-2.0
   paths:
     - '**/*.java'
+    - '**/*.xml'
     - '**/*.yml'
   paths-ignore:
     - '**/generated/**/*.java'
