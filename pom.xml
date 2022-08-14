@@ -76,7 +76,7 @@ limitations under the License.
     <modules>
         <module>dryad-client</module>
         <module>dryad-config</module>
-<!--        <module>dryad-ctl</module>-->
+        <module>dryad-ctl</module>
         <module>dryad-proto</module>
         <module>dryad-server</module>
     </modules>
