@@ -16,14 +16,13 @@
 
 package io.korandoru.dryad.server;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import io.korandoru.dryad.config.ClusterConfig;
 import io.korandoru.dryad.config.ServerConfig;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
 import org.apache.ratis.conf.RaftProperties;
 import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.RaftGroup;
@@ -39,9 +38,9 @@ public class Server implements AutoCloseable {
     private final RaftServer server;
 
     public Server(ServerConfig serverConfig, ClusterConfig clusterConfig, String id) throws Exception {
-        Preconditions.checkNotNull(serverConfig);
-        Preconditions.checkNotNull(clusterConfig);
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(id));
+        Validate.notEmpty(id);
+        Validate.notNull(serverConfig);
+        Validate.notNull(clusterConfig);
 
         final var peers = clusterConfig.peers().stream()
                 .map(model -> RaftPeer.newBuilder().setId(model.id()).setAddress(model.address()).build())
