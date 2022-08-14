@@ -16,8 +16,8 @@
 
 package io.korandoru.dryad.server;
 
-import io.korandoru.dryad.config.ClusterConfig;
-import io.korandoru.dryad.config.ServerConfig;
+import io.korandoru.dryad.core.config.ClusterConfig;
+import io.korandoru.dryad.core.config.ServerConfig;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;

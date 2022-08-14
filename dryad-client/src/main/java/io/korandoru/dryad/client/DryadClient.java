@@ -16,9 +16,9 @@
 
 package io.korandoru.dryad.client;
 
-import io.korandoru.dryad.proto.GetRequest;
-import io.korandoru.dryad.proto.GetResponse;
-import io.korandoru.dryad.proto.PutRequest;
+import io.korandoru.dryad.core.proto.GetRequest;
+import io.korandoru.dryad.core.proto.GetResponse;
+import io.korandoru.dryad.core.proto.PutRequest;
 import java.util.HashMap;
 import java.util.UUID;
 import org.apache.ratis.client.RaftClient;

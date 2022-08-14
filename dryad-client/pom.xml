@@ -30,7 +30,7 @@ limitations under the License.
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>dryad-proto</artifactId>
+            <artifactId>dryad-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

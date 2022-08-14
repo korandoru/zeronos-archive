@@ -16,10 +16,10 @@
 
 package io.korandoru.dryad.server;
 
-import io.korandoru.dryad.proto.GetRequest;
-import io.korandoru.dryad.proto.GetResponse;
-import io.korandoru.dryad.proto.PutRequest;
-import io.korandoru.dryad.proto.PutResponse;
+import io.korandoru.dryad.core.proto.GetRequest;
+import io.korandoru.dryad.core.proto.GetResponse;
+import io.korandoru.dryad.core.proto.PutRequest;
+import io.korandoru.dryad.core.proto.PutResponse;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
