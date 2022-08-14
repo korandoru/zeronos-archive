@@ -16,14 +16,13 @@
 
 # shellcheck disable=SC2164
 
-BINDIR=$(dirname "$0")
-DRYAD_HOME=$(cd -P "$BINDIR"/..;pwd)
+BIN_PATH=$(dirname "$0")
+DRYAD_HOME=$(cd -P "$BIN_PATH"/..;pwd)
 export DRYAD_HOME
 
 # Check for the java to use
 if [[ -z $JAVA_HOME ]]; then
-    JAVA=$(which java)
-    if [ $? != 0 ]; then
+    if ! JAVA=$(which java); then
         echo "Error: JAVA_HOME not set, and no java executable found in $PATH." 1>&2
         exit 1
     fi
