@@ -46,7 +46,8 @@ public class DryadClient {
                     groupId,
                     RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build(),
                     RaftPeer.newBuilder().setAddress("127.0.0.1:21196").setId("n1").build(),
-                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()))
+                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()
+            ))
             .setClientRpc(rpc)
             .build();
 

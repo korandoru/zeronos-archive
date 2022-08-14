@@ -79,6 +79,7 @@ limitations under the License.
         <module>dryad-command</module>
         <module>dryad-core</module>
         <module>dryad-server</module>
+        <module>distribution</module>
     </modules>
 
     <dependencyManagement>
