@@ -26,7 +26,8 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = "dryad",
-        version = "0.1"
+        version = "0.1",
+        mixinStandardHelpOptions = true
 )
 public class DryadMain implements Callable<Integer> {
 
