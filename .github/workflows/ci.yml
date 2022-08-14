@@ -49,7 +49,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Check code style
-        run: ./gradlew spotlessCheck
+        run: mvn spotless:check
 
   sanitycheck:
     if: (github.event_name != 'schedule') || (github.repository == 'korandoru/dryad')
@@ -81,7 +81,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Gradle test
-        run: ./gradlew test
+        run: mvn clean verify
 
   required:
     name: Required
