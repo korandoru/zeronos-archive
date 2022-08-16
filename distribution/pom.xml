@@ -26,7 +26,7 @@ limitations under the License.
     </parent>
 
     <artifactId>distribution</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -39,21 +39,21 @@ limitations under the License.
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.7.0</version>
                 <executions>
                     <execution>
-                        <id>build-classpath</id>
-                        <phase>generate-sources</phase>
+                        <id>repackage</id>
                         <goals>
-                            <goal>build-classpath</goal>
+                            <goal>repackage</goal>
                         </goals>
-                        <configuration>
-                            <outputFile>target/classpath.txt</outputFile>
-                            <includeScope>runtime</includeScope>
-                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <mainClass>io.korandoru.dryad.command.DryadMain</mainClass>
+                    <executable>true</executable>
+                </configuration>
             </plugin>
         </plugins>
     </build>
