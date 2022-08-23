@@ -19,6 +19,7 @@ package io.korandoru.dryad.client;
 import io.korandoru.dryad.core.proto.GetRequest;
 import io.korandoru.dryad.core.proto.GetResponse;
 import io.korandoru.dryad.core.proto.PutRequest;
+import io.korandoru.dryad.core.proto.PutResponse;
 import java.util.HashMap;
 import java.util.UUID;
 import org.apache.ratis.client.RaftClient;
@@ -31,6 +32,7 @@ import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
+import org.apache.ratis.thirdparty.com.google.protobuf.TextFormat;
 
 public class DryadClient {
 
@@ -41,15 +43,15 @@ public class DryadClient {
         final var rpc = new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), properties);
 
         final var client = RaftClient.newBuilder()
-            .setProperties(properties)
-            .setRaftGroup(RaftGroup.valueOf(
-                    groupId,
-                    RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build(),
-                    RaftPeer.newBuilder().setAddress("127.0.0.1:21196").setId("n1").build(),
-                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()
-            ))
-            .setClientRpc(rpc)
-            .build();
+                .setProperties(properties)
+                .setRaftGroup(RaftGroup.valueOf(
+                        groupId,
+                        RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build()
+//                    RaftPeer.newBuilder().setAddress("127.0.0.1:211   96").setId("n1").build(),
+//                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()
+                ))
+                .setClientRpc(rpc)
+                .build();
 
         try (client) {
             final var dataMap = new HashMap<String, String>();
@@ -57,29 +59,30 @@ public class DryadClient {
                 dataMap.put("k" + i, UUID.randomUUID().toString());
             }
 
+            final var printer = TextFormat.printer();
+
             for (var k : dataMap.keySet()) {
                 final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
                 final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
                 final var v = GetResponse.parseFrom(response.getMessage().getContent());
-                System.out.println("Get: " + k);
-                System.out.println(v);
+                System.out.printf("Get key %s return value %s\n" , k, printer.printToString(v));
             }
 
             for (var e : dataMap.entrySet()) {
                 final var request = PutRequest.newBuilder()
-                    .setKey(ByteString.copyFromUtf8(e.getKey()))
-                    .setValue(ByteString.copyFromUtf8(e.getValue()))
-                    .build();
+                        .setKey(ByteString.copyFromUtf8(e.getKey()))
+                        .setValue(ByteString.copyFromUtf8(e.getValue()))
+                        .build();
                 final var response = client.io().send(Message.valueOf(request.toByteString()));
-                System.out.println("Put: " + response.getMessage().getContent());
+                final var r = PutResponse.parseFrom(response.getMessage().getContent());
+                System.out.printf("Put key %s with value %s, returns %s\n", e.getKey(), e.getValue(), printer.printToString(r));
             }
 
             for (var k : dataMap.keySet()) {
                 final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
                 final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
                 final var v = GetResponse.parseFrom(response.getMessage().getContent());
-                System.out.println("Get: " + k);
-                System.out.println(v);
+                System.out.printf("Get key %s return value %s\n" , k, printer.printToString(v));
             }
         }
     }
