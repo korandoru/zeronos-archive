@@ -30,7 +30,7 @@ limitations under the License.
     <files>
         <file>
             <source>${project.build.directory}/distribution-${project.version}.jar</source>
-            <destName>dryad</destName>
+            <destName>zeronos</destName>
             <outputDirectory>.</outputDirectory>
             <fileMode>755</fileMode>
         </file>

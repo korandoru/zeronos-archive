@@ -16,12 +16,12 @@ limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.korandoru.dryad</groupId>
-    <artifactId>dryad</artifactId>
+    <groupId>io.korandoru.zeronos</groupId>
+    <artifactId>zeronos</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <url>https://github.com/korandoru/dryad</url>
+    <url>https://github.com/korandoru/zeronos</url>
 
     <licenses>
         <license>
@@ -40,9 +40,9 @@ limitations under the License.
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/korandoru/dryad.git</connection>
-        <developerConnection>scm:git:ssh://github.com:korandoru/dryad.git</developerConnection>
-        <url>https://github.com/korandoru/dryad</url>
+        <connection>scm:git:git://github.com/korandoru/zeronos.git</connection>
+        <developerConnection>scm:git:ssh://github.com:korandoru/zeronos.git</developerConnection>
+        <url>https://github.com/korandoru/zeronos</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -78,10 +78,10 @@ limitations under the License.
     </properties>
 
     <modules>
-        <module>dryad-client</module>
-        <module>dryad-command</module>
-        <module>dryad-core</module>
-        <module>dryad-server</module>
+        <module>zeronos-client</module>
+        <module>zeronos-command</module>
+        <module>zeronos-core</module>
+        <module>zeronos-server</module>
         <module>distribution</module>
     </modules>
 

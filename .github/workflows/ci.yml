@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   license:
-    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/dryad')
+    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
     name: Check license header
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -37,7 +37,7 @@ jobs:
           config: tools/ci/licenserc.yml
 
   codestyle:
-    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/dryad')
+    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
     name: Check code style
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -52,7 +52,7 @@ jobs:
         run: mvn spotless:check
 
   sanitycheck:
-    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/dryad')
+    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
     name: Sanity check results
     needs: [ license, codestyle ]
     runs-on: ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
           fi
 
   unittest:
-    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/dryad')
+    if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
     name: Run unit tests
     needs: [ sanitycheck ]
     runs-on: ubuntu-latest
