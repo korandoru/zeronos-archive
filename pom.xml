@@ -76,6 +76,8 @@ limitations under the License.
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <ratis-thirdparty.version>1.0.2</ratis-thirdparty.version>
+        <ratis.version>2.3.0</ratis.version>
+        <slf4j.version>1.7.36</slf4j.version>
     </properties>
 
     <modules>
@@ -116,22 +118,27 @@ limitations under the License.
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.36</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
-                <version>1.7.36</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ratis</groupId>
                 <artifactId>ratis-server</artifactId>
-                <version>2.3.0</version>
+                <version>${ratis.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ratis</groupId>
                 <artifactId>ratis-grpc</artifactId>
-                <version>2.3.0</version>
+                <version>${ratis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ratis</groupId>
+                <artifactId>ratis-server-api</artifactId>
+                <version>${ratis.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

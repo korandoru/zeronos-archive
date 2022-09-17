@@ -16,12 +16,12 @@
 
 package io.korandoru.zeronos.client;
 
+import io.korandoru.zeronos.core.config.ClusterConfig;
 import io.korandoru.zeronos.core.proto.GetRequest;
 import io.korandoru.zeronos.core.proto.GetResponse;
 import io.korandoru.zeronos.core.proto.PutRequest;
 import io.korandoru.zeronos.core.proto.PutResponse;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.Optional;
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.Parameters;
 import org.apache.ratis.conf.RaftProperties;
@@ -32,59 +32,47 @@ import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
-import org.apache.ratis.thirdparty.com.google.protobuf.TextFormat;
 
-public class ZeronosClient {
+public class ZeronosClient implements AutoCloseable {
 
-    public static void main(String[] args) throws Exception {
+    private final RaftClient client;
+
+    public ZeronosClient(ClusterConfig clusterConfig) {
+        final var groupId = RaftGroupId.valueOf(clusterConfig.groupId());
         final var properties = new RaftProperties();
-
-        final var groupId = RaftGroupId.valueOf(UUID.fromString("02511d47-d67c-49a3-9011-abb3109a44c1"));
         final var rpc = new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), properties);
-
-        final var client = RaftClient.newBuilder()
+        final var peers = clusterConfig.peers().stream()
+                .map(model -> RaftPeer.newBuilder().setId(model.id()).setAddress(model.address()).build())
+                .toList();
+        this.client = RaftClient.newBuilder()
                 .setProperties(properties)
-                .setRaftGroup(RaftGroup.valueOf(
-                        groupId,
-                        RaftPeer.newBuilder().setAddress("127.0.0.1:21096").setId("n0").build()
-//                    RaftPeer.newBuilder().setAddress("127.0.0.1:211   96").setId("n1").build(),
-//                    RaftPeer.newBuilder().setAddress("127.0.0.1:21296").setId("n2").build()
-                ))
+                .setRaftGroup(RaftGroup.valueOf(groupId, peers))
                 .setClientRpc(rpc)
                 .build();
+    }
 
-        try (client) {
-            final var dataMap = new HashMap<String, String>();
-            for (int i = 0; i < 128; i++) {
-                dataMap.put("k" + i, UUID.randomUUID().toString());
-            }
+    @Override
+    public void close() throws Exception {
+        this.client.close();
+    }
 
-            final var printer = TextFormat.printer();
-
-            for (var k : dataMap.keySet()) {
-                final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
-                final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
-                final var v = GetResponse.parseFrom(response.getMessage().getContent());
-                System.out.printf("Get key %s return value %s\n" , k, printer.printToString(v));
-            }
-
-            for (var e : dataMap.entrySet()) {
-                final var request = PutRequest.newBuilder()
-                        .setKey(ByteString.copyFromUtf8(e.getKey()))
-                        .setValue(ByteString.copyFromUtf8(e.getValue()))
-                        .build();
-                final var response = client.io().send(Message.valueOf(request.toByteString()));
-                final var r = PutResponse.parseFrom(response.getMessage().getContent());
-                System.out.printf("Put key %s with value %s, returns %s\n", e.getKey(), e.getValue(), printer.printToString(r));
-            }
-
-            for (var k : dataMap.keySet()) {
-                final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(k)).build();
-                final var response = client.io().sendReadOnly(Message.valueOf(request.toByteString()));
-                final var v = GetResponse.parseFrom(response.getMessage().getContent());
-                System.out.printf("Get key %s return value %s\n" , k, printer.printToString(v));
-            }
+    public Optional<String> get(String key) throws Exception {
+        final var request = GetRequest.newBuilder().setKey(ByteString.copyFromUtf8(key)).build();
+        final var reply = this.client.io().sendReadOnly(Message.valueOf(request.toByteString()));
+        final var response = GetResponse.parseFrom(reply.getMessage().getContent());
+        if (!response.getFound()) {
+            return Optional.empty();
         }
+        return Optional.of(response.getValue().toStringUtf8());
+    }
+
+    public void put(String key, String value) throws Exception {
+        final var request = PutRequest.newBuilder()
+                .setKey(ByteString.copyFromUtf8(key))
+                .setValue(ByteString.copyFromUtf8(value))
+                .build();
+        final var reply = client.io().send(Message.valueOf(request.toByteString()));
+        PutResponse.parseFrom(reply.getMessage().getContent());
     }
 
 }
