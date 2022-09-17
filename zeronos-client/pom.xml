@@ -35,11 +35,18 @@ limitations under the License.
         </dependency>
         <dependency>
             <groupId>org.apache.ratis</groupId>
-            <artifactId>ratis-server</artifactId>
+            <artifactId>ratis-server-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.ratis</groupId>
             <artifactId>ratis-grpc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>zeronos-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
