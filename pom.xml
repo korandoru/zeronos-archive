@@ -145,6 +145,11 @@ limitations under the License.
                 <artifactId>commons-lang3</artifactId>
                 <version>3.12.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>7.6.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
