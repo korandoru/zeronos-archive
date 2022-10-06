@@ -1,2 +1,5 @@
 [storage]
 basedir = "/tmp/raft-server/"
+
+[snapshot]
+auto-trigger-threshold = 128

@@ -21,29 +21,61 @@ import io.korandoru.zeronos.core.proto.GetResponse;
 import io.korandoru.zeronos.core.proto.PutRequest;
 import io.korandoru.zeronos.core.proto.PutResponse;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.ratis.protocol.Message;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.server.RaftServer;
+import org.apache.ratis.server.raftlog.RaftLog;
 import org.apache.ratis.server.storage.RaftStorage;
+import org.apache.ratis.statemachine.SnapshotInfo;
+import org.apache.ratis.statemachine.StateMachineStorage;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
 import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
+import org.rocksdb.Checkpoint;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 
 @Slf4j
 public class DataMapStateMachine extends BaseStateMachine {
+
+    private final FileListStateMachineStorage storage = new FileListStateMachineStorage();
+
+    private Path dbPath;
     private RocksDB db;
 
     @Override
-    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage storage) throws IOException {
-        super.initialize(raftServer, raftGroupId, storage);
+    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
+        super.initialize(raftServer, raftGroupId, raftStorage);
+        storage.init(raftStorage);
+        dbPath = raftStorage.getStorageDir().getTmpDir().toPath().resolve("rocksdb");
+        reinitialize();
+    }
+
+    @Override
+    public void reinitialize() throws IOException {
+        FileUtils.deleteDirectory(dbPath.toFile());
+        FileUtils.createParentDirectories(dbPath.toFile());
+        final var latestSnapshot = storage.getLatestSnapshot();
+        final var fileInfos = Optional.ofNullable(latestSnapshot)
+                .map(SnapshotInfo::getFiles)
+                .orElse(null);
+        if (fileInfos != null) {
+            for (final var fileInfo : fileInfos) {
+                FileUtils.copyFileToDirectory(fileInfo.getPath().toFile(), dbPath.toFile());
+            }
+            log.info("successfully load snapshot with index: {}", latestSnapshot.getTermIndex());
+            final var termIndex = latestSnapshot.getTermIndex();
+            updateLastAppliedTermIndex(termIndex.getTerm(), termIndex.getIndex());
+        }
         try (Options options = new Options().setCreateIfMissing(true)) {
-            this.db = RocksDB.open(options, storage.getStorageDir().getTmpDir().getAbsolutePath());
+            db = RocksDB.open(options, dbPath.toAbsolutePath().toString());
         } catch (RocksDBException e) {
             throw new IOException(e);
         }
@@ -51,7 +83,29 @@ public class DataMapStateMachine extends BaseStateMachine {
 
     @Override
     public void close() {
-        this.db.close();
+        db.close();
+    }
+
+    @Override
+    public StateMachineStorage getStateMachineStorage() {
+        return storage;
+    }
+
+    @Override
+    public long takeSnapshot() {
+        final var latestIndex = getLastAppliedTermIndex();
+        final var directory = storage.getSnapshotDirectory(latestIndex.getTerm(), latestIndex.getIndex());
+        if (db != null) {
+            try (final var checkpoint = Checkpoint.create(db)) {
+                final var path = directory.getAbsolutePath();
+                checkpoint.createCheckpoint(path);
+                log.info("successfully create snapshot for index: {}, path: {}", latestIndex, path);
+                return latestIndex.getIndex();
+            } catch (RocksDBException e) {
+                log.warn("cannot take snapshot for index: {}", latestIndex, e);
+            }
+        }
+        return RaftLog.INVALID_LOG_INDEX;
     }
 
     @Override

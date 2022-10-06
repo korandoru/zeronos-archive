@@ -19,8 +19,8 @@ package io.korandoru.zeronos.client;
 import io.korandoru.zeronos.core.config.ClusterConfig;
 import io.korandoru.zeronos.core.config.ServerConfig;
 import io.korandoru.zeronos.server.ZeronosServer;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.UUID;
 import lombok.Cleanup;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,8 +36,14 @@ public class ZeronosClientTest {
         @Cleanup final var client = new ZeronosClient(clusterConfig);
 
         final var dataMap = new HashMap<String, String>();
-        for (int i = 0; i < 128; i++) {
-            dataMap.put("k" + i, UUID.randomUUID().toString());
+        for (int i = 0; i < 256; i++) {
+            dataMap.put("k" + i, "v" + i + ":" + Instant.now().toString());
+        }
+
+        for (int i = 0; i < 256; i++) {
+            final var k = "k" + i;
+            final var v = client.get(k);
+            System.out.println("k = " + k + ", v = " + v);
         }
 
         for (var e : dataMap.entrySet()) {

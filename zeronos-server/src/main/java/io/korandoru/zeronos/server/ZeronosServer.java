@@ -57,6 +57,11 @@ public class ZeronosServer implements AutoCloseable {
         final var basedir = new File(serverConfig.storageBasedir(), id);
         RaftServerConfigKeys.setStorageDir(properties, Collections.singletonList(basedir));
 
+        if (serverConfig.snapshotAutoTriggerEnabled()) {
+            RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
+            RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, serverConfig.snapshotAutoTriggerThreshold());
+        }
+
         final var groupId = RaftGroupId.valueOf(clusterConfig.groupId());
         final var group = RaftGroup.valueOf(groupId, peers);
         final var stateMachine = new DataMapStateMachine();
