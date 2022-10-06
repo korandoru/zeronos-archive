@@ -14,7 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.korandoru.zeronos</groupId>
     <artifactId>zeronos</artifactId>
@@ -228,8 +229,8 @@ limitations under the License.
                                 <include>.gitignore</include>
                                 <include>pom.xml</include>
                             </includes>
-                            <trimTrailingWhitespace />
-                            <endWithNewline />
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
                             <indent>
                                 <spaces>true</spaces>
                                 <spacesPerTab>4</spacesPerTab>
@@ -237,12 +238,10 @@ limitations under the License.
                         </format>
                     </formats>
                     <java>
-                        <importOrder>
-                            <order>,static</order>
-                        </importOrder>
-                        <removeUnusedImports />
-                        <trimTrailingWhitespace />
-                        <endWithNewline />
+                        <importOrder/>
+                        <removeUnusedImports/>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
                         <indent>
                             <spaces>true</spaces>
                             <spacesPerTab>4</spacesPerTab>

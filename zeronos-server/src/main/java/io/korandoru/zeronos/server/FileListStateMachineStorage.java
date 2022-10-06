@@ -16,7 +16,6 @@
 
 package io.korandoru.zeronos.server;
 
-import static org.apache.ratis.server.raftlog.RaftLog.INVALID_LOG_INDEX;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -28,6 +27,7 @@ import java.util.regex.Pattern;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ratis.server.protocol.TermIndex;
+import org.apache.ratis.server.raftlog.RaftLog;
 import org.apache.ratis.server.storage.FileInfo;
 import org.apache.ratis.server.storage.RaftStorage;
 import org.apache.ratis.statemachine.SnapshotRetentionPolicy;
@@ -72,7 +72,7 @@ public class FileListStateMachineStorage implements StateMachineStorage {
     }
 
     private Optional<Path> findLatestSnapshotDirectory() throws IOException {
-        var latestIndex = INVALID_LOG_INDEX;
+        var latestIndex = RaftLog.INVALID_LOG_INDEX;
         var latestSnapshotPath = Optional.<Path>empty();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(smDir.toPath())) {
             for (Path path : stream) {
