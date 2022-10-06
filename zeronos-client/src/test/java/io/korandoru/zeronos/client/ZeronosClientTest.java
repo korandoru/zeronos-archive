@@ -18,9 +18,9 @@ package io.korandoru.zeronos.client;
 
 import io.korandoru.zeronos.core.config.ClusterConfig;
 import io.korandoru.zeronos.core.config.ServerConfig;
-import io.korandoru.zeronos.server.Server;
+import io.korandoru.zeronos.server.ZeronosServer;
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.UUID;
 import lombok.Cleanup;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -31,13 +31,19 @@ public class ZeronosClientTest {
     public void testPutGet() throws Exception {
         final var serverConfig = ServerConfig.defaultConfig();
         final var clusterConfig = ClusterConfig.defaultConfig();
-        @Cleanup final var server = new Server(serverConfig, clusterConfig, "n0");
+        @Cleanup final var server = new ZeronosServer(serverConfig, clusterConfig, "n0");
         server.start();
         @Cleanup final var client = new ZeronosClient(clusterConfig);
 
         final var dataMap = new HashMap<String, String>();
-        for (int i = 0; i < 128; i++) {
-            dataMap.put("k" + i, UUID.randomUUID().toString());
+        for (int i = 0; i < 256; i++) {
+            dataMap.put("k" + i, "v" + i + ":" + Instant.now().toString());
+        }
+
+        for (int i = 0; i < 256; i++) {
+            final var k = "k" + i;
+            final var v = client.get(k);
+            System.out.println("k = " + k + ", v = " + v);
         }
 
         for (var e : dataMap.entrySet()) {

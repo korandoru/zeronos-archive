@@ -33,11 +33,11 @@ import org.apache.ratis.server.RaftServerConfigKeys;
 import org.apache.ratis.util.NetUtils;
 
 @Slf4j
-public class Server implements AutoCloseable {
+public class ZeronosServer implements AutoCloseable {
 
     private final RaftServer server;
 
-    public Server(ServerConfig serverConfig, ClusterConfig clusterConfig, String id) throws Exception {
+    public ZeronosServer(ServerConfig serverConfig, ClusterConfig clusterConfig, String id) throws Exception {
         Validate.notEmpty(id);
         Validate.notNull(serverConfig);
         Validate.notNull(clusterConfig);
@@ -57,9 +57,14 @@ public class Server implements AutoCloseable {
         final var basedir = new File(serverConfig.storageBasedir(), id);
         RaftServerConfigKeys.setStorageDir(properties, Collections.singletonList(basedir));
 
+        if (serverConfig.snapshotAutoTriggerEnabled()) {
+            RaftServerConfigKeys.Snapshot.setAutoTriggerEnabled(properties, true);
+            RaftServerConfigKeys.Snapshot.setAutoTriggerThreshold(properties, serverConfig.snapshotAutoTriggerThreshold());
+        }
+
         final var groupId = RaftGroupId.valueOf(clusterConfig.groupId());
         final var group = RaftGroup.valueOf(groupId, peers);
-        final var stateMachine = new DataMapStatemachine();
+        final var stateMachine = new DataMapStateMachine();
         this.server = RaftServer.newBuilder()
                 .setGroup(group)
                 .setProperties(properties)

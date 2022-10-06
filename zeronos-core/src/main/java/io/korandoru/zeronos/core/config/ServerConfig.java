@@ -23,6 +23,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Optional;
 
 public class ServerConfig {
 
@@ -46,6 +47,18 @@ public class ServerConfig {
 
     public String storageBasedir() {
         return context.read("$.storage.basedir");
+    }
+
+    public boolean snapshotAutoTriggerEnabled() {
+        return findSnapshotAutoTriggerThreshold().isPresent();
+    }
+
+    public long snapshotAutoTriggerThreshold() {
+        return findSnapshotAutoTriggerThreshold().orElse(400000L);
+    }
+
+    private Optional<Long> findSnapshotAutoTriggerThreshold() {
+        return Optional.ofNullable(context.read("$.snapshot.auto-trigger-threshold", Long.class));
     }
 
     @Override
