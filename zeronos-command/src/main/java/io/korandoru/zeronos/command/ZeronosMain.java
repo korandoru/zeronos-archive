@@ -18,7 +18,7 @@ package io.korandoru.zeronos.command;
 
 import io.korandoru.zeronos.core.config.ClusterConfig;
 import io.korandoru.zeronos.core.config.ServerConfig;
-import io.korandoru.zeronos.server.Server;
+import io.korandoru.zeronos.server.ZeronosServer;
 import java.io.File;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
@@ -50,7 +50,7 @@ public class ZeronosMain implements Callable<Integer> {
                 ? ClusterConfig.readConfig(this.clusterConfig.toURI().toURL())
                 : ClusterConfig.defaultConfig();
 
-        final var server = new Server(serverConfig, clusterConfig, this.id);
+        final var server = new ZeronosServer(serverConfig, clusterConfig, this.id);
 
         try (server) {
             server.start();

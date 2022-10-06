@@ -36,7 +36,7 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 
 @Slf4j
-public class DataMapStatemachine extends BaseStateMachine {
+public class DataMapStateMachine extends BaseStateMachine {
     private RocksDB db;
 
     @Override

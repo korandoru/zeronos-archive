@@ -18,7 +18,7 @@ package io.korandoru.zeronos.client;
 
 import io.korandoru.zeronos.core.config.ClusterConfig;
 import io.korandoru.zeronos.core.config.ServerConfig;
-import io.korandoru.zeronos.server.Server;
+import io.korandoru.zeronos.server.ZeronosServer;
 import java.util.HashMap;
 import java.util.UUID;
 import lombok.Cleanup;
@@ -31,7 +31,7 @@ public class ZeronosClientTest {
     public void testPutGet() throws Exception {
         final var serverConfig = ServerConfig.defaultConfig();
         final var clusterConfig = ClusterConfig.defaultConfig();
-        @Cleanup final var server = new Server(serverConfig, clusterConfig, "n0");
+        @Cleanup final var server = new ZeronosServer(serverConfig, clusterConfig, "n0");
         server.start();
         @Cleanup final var client = new ZeronosClient(clusterConfig);
 
