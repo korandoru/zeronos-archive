@@ -91,7 +91,7 @@ public class FileListStateMachineStorage implements StateMachineStorage {
 
     @Override
     public void format() {
-        // this method is now a placeholder only in upstream
+        // this method is now placeholder-only in upstream
     }
 
     @Override
