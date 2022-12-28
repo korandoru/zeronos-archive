@@ -51,7 +51,7 @@ limitations under the License.
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>io.korandoru.zeronos.command.ZeronosMain</mainClass>
+                    <mainClass>io.korandoru.zeronos.command.ZeronosCommandMain</mainClass>
                     <executable>true</executable>
                 </configuration>
             </plugin>
