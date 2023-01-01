@@ -20,7 +20,7 @@
     <script_style>
         <beforeEachLine># </beforeEachLine>
         <endLine>EOL</endLine>
-        <skipLinePattern>^#!.*$</skipLinePattern>
+        <skipLine>^#!.*$</skipLine>
         <firstLineDetectionPattern>#.*$</firstLineDetectionPattern>
         <lastLineDetectionPattern>#.*$</lastLineDetectionPattern>
         <allowBlankLines>false</allowBlankLines>
