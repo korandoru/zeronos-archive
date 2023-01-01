@@ -262,9 +262,12 @@
                     <licenseSets>
                         <licenseSet>
                             <header>tools/ci/license-header-template.txt</header>
-                            <excludes>
-                                <exclude>build-target/**</exclude>
-                            </excludes>
+                            <includes>
+                                <!-- Force override the default exclusions -->
+                                <include>**</include>
+                                <include>**/.github</include>
+                                <include>**/.github/**</include>
+                            </includes>
                         </licenseSet>
                     </licenseSets>
                     <mapping>
