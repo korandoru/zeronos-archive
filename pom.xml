@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright 2022 Korandoru Contributors
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Copyright 2022 Korandoru Contributors
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+        https://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -22,12 +24,14 @@ limitations under the License.
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <inceptionYear>2022</inceptionYear>
+
     <url>https://github.com/korandoru/zeronos</url>
 
     <licenses>
         <license>
             <name>Apache 2.0 License</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -79,6 +83,7 @@ limitations under the License.
         <ratis-thirdparty.version>1.0.2</ratis-thirdparty.version>
         <ratis.version>2.4.1</ratis.version>
         <slf4j.version>1.7.36</slf4j.version>
+        <license-maven-plugin.version>4.2.rc3</license-maven-plugin.version>
     </properties>
 
     <modules>
@@ -248,6 +253,35 @@ limitations under the License.
                         </indent>
                     </java>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${license-maven-plugin.version}</version>
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>tools/ci/license-header-template.txt</header>
+                            <includes>
+                                <!-- Force override the default exclusions -->
+                                <include>**</include>
+                                <include>**/.github</include>
+                                <include>**/.github/**</include>
+                            </includes>
+                        </licenseSet>
+                    </licenseSets>
+                    <mapping>
+                        <proto>SLASHSTAR_STYLE</proto>
+                        <toml>SCRIPT_STYLE</toml>
+                    </mapping>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.mycila</groupId>
+                        <artifactId>license-maven-plugin-git</artifactId>
+                        <version>${license-maven-plugin.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
