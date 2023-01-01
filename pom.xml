@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2022 Korandoru Contributors
+    Copyright 2022-2023 Korandoru Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -268,8 +268,14 @@
                                 <include>**/.github</include>
                                 <include>**/.github/**</include>
                             </includes>
+                            <excludes>
+                                <exclude>build-target/**</exclude>
+                            </excludes>
                         </licenseSet>
                     </licenseSets>
+                    <headerDefinitions>
+                        <headerDefinition>tools/ci/license-header-override-styles.xml</headerDefinition>
+                    </headerDefinitions>
                     <mapping>
                         <proto>SLASHSTAR_STYLE</proto>
                         <toml>SCRIPT_STYLE</toml>
