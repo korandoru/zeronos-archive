@@ -268,8 +268,14 @@
                                 <include>**/.github</include>
                                 <include>**/.github/**</include>
                             </includes>
+                            <excludes>
+                                <exclude>build-target/**</exclude>
+                            </excludes>
                         </licenseSet>
                     </licenseSets>
+                    <headerDefinitions>
+                        <headerDefinition>tools/ci/license-header-override-styles.xml</headerDefinition>
+                    </headerDefinitions>
                     <mapping>
                         <proto>SLASHSTAR_STYLE</proto>
                         <toml>SCRIPT_STYLE</toml>

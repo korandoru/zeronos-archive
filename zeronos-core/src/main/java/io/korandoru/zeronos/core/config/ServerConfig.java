@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.korandoru.zeronos.core.config;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
