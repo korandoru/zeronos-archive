@@ -17,10 +17,10 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    branches: [main]
   schedule:
-    - cron: '2 4 * * *'
+    - cron: '4 2 * * *'
 
 # Concurrency strategy:
 #   github.workflow: distinguish this workflow from others
