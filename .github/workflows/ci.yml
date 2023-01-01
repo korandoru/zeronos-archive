@@ -38,7 +38,7 @@ concurrency:
 jobs:
   check:
     if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
-    name: Check code style
+    name: Check and lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
