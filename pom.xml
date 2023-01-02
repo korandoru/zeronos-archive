@@ -66,6 +66,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+
         <spotless.version>2.24.1</spotless.version>
         <lombok.version>1.18.24</lombok.version>
         <surefire.version>3.0.0-M7</surefire.version>
@@ -74,7 +75,7 @@
         <junit.version>5.9.0</junit.version>
         <os-maven-plugin.version>1.7.0</os-maven-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
-        <protobuf3.version>3.21.5</protobuf3.version>
+        <protobuf3.version>3.21.7</protobuf3.version>
         <protoc3.version>${protobuf3.version}</protoc3.version>
         <build-helper-maven-plugin.version>1.9</build-helper-maven-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
@@ -84,6 +85,9 @@
         <ratis.version>2.4.1</ratis.version>
         <slf4j.version>1.7.36</slf4j.version>
         <license-maven-plugin.version>4.2.rc3</license-maven-plugin.version>
+        <jackson-dataformat-toml.version>2.14.1</jackson-dataformat-toml.version>
+        <json-path.version>2.7.0</json-path.version>
+        <picocli.version>4.6.3</picocli.version>
     </properties>
 
     <modules>
@@ -99,7 +103,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-toml</artifactId>
-                <version>2.12.7</version>
+                <version>${jackson-dataformat-toml.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -109,12 +113,12 @@
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
-                <version>2.7.0</version>
+                <version>${json-path.version}</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
-                <version>4.6.3</version>
+                <version>${picocli.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ratis</groupId>
