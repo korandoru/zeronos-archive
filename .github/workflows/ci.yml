@@ -70,9 +70,8 @@ jobs:
     name: Required
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs:
-      - check
-      - unittest
+    if: ${{ always() && ((github.event_name != 'schedule') || (github.repository == 'apache/pulsar')) }}
+    needs: [ check, unittest ]
     steps:
       - name: Guardian
         run: |
