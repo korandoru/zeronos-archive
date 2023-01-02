@@ -70,7 +70,7 @@ jobs:
     name: Required
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ always() && ((github.event_name != 'schedule') || (github.repository == 'apache/pulsar')) }}
+    if: ${{ always() && ((github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')) }}
     needs: [ check, unittest ]
     steps:
       - name: Guardian
