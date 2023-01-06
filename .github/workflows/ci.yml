@@ -41,6 +41,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
+      - name: Check License Header
+        uses: korandoru/hawkeye@main
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -48,8 +50,6 @@ jobs:
           java-version: '17'
       - name: Check code style
         run: mvn spotless:check
-      - name: Check license header
-        run: mvn license:format
 
   unittest:
     if: (github.event_name != 'schedule') || (github.repository == 'korandoru/zeronos')
