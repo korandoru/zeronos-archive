@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2022-2023 Korandoru Contributors
+    Copyright 2022 Korandoru Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@
     <artifactId>zeronos</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
+    <name>Zeronos</name>
+    <description>Zeronos is a distributed consensus system.</description>
 
     <inceptionYear>2022</inceptionYear>
 
@@ -257,41 +260,6 @@
                         </indent>
                     </java>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>${license-maven-plugin.version}</version>
-                <configuration>
-                    <licenseSets>
-                        <licenseSet>
-                            <header>tools/ci/license-header-template.txt</header>
-                            <includes>
-                                <!-- Force override the default exclusions -->
-                                <include>**</include>
-                                <include>**/.github</include>
-                                <include>**/.github/**</include>
-                            </includes>
-                            <excludes>
-                                <exclude>build-target/**</exclude>
-                            </excludes>
-                        </licenseSet>
-                    </licenseSets>
-                    <headerDefinitions>
-                        <headerDefinition>tools/ci/license-header-override-styles.xml</headerDefinition>
-                    </headerDefinitions>
-                    <mapping>
-                        <proto>SLASHSTAR_STYLE</proto>
-                        <toml>SCRIPT_STYLE</toml>
-                    </mapping>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.mycila</groupId>
-                        <artifactId>license-maven-plugin-git</artifactId>
-                        <version>${license-maven-plugin.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
