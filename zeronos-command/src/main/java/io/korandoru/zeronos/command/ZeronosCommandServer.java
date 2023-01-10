@@ -16,7 +16,6 @@
 
 package io.korandoru.zeronos.command;
 
-import java.io.File;
 import picocli.CommandLine;
 
 @CommandLine.Command(
