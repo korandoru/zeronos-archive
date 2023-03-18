@@ -20,9 +20,8 @@ import io.korandoru.zeronos.core.proto.GetRequest;
 import io.korandoru.zeronos.core.proto.GetResponse;
 import io.korandoru.zeronos.core.proto.PutRequest;
 import io.korandoru.zeronos.core.proto.PutResponse;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -31,7 +30,6 @@ import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.server.RaftServer;
 import org.apache.ratis.server.raftlog.RaftLog;
 import org.apache.ratis.server.storage.RaftStorage;
-import org.apache.ratis.statemachine.SnapshotInfo;
 import org.apache.ratis.statemachine.StateMachineStorage;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
@@ -45,37 +43,34 @@ import org.rocksdb.RocksDBException;
 @Slf4j
 public class DataMapStateMachine extends BaseStateMachine {
 
-    private final FileListStateMachineStorage storage = new FileListStateMachineStorage();
+    private final SnapshotStorage storage = new SnapshotStorage();
 
-    private Path dbPath;
+    private File dataDir;
     private RocksDB db;
 
     @Override
     public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
         super.initialize(raftServer, raftGroupId, raftStorage);
+        dataDir = new File(raftStorage.getStorageDir().getTmpDir(), "rocksdb");
         storage.init(raftStorage);
-        dbPath = raftStorage.getStorageDir().getTmpDir().toPath().resolve("rocksdb");
         reinitialize();
     }
 
     @Override
     public void reinitialize() throws IOException {
-        FileUtils.deleteDirectory(dbPath.toFile());
-        FileUtils.createParentDirectories(dbPath.toFile());
-        final var latestSnapshot = storage.getLatestSnapshot();
-        final var fileInfos = Optional.ofNullable(latestSnapshot)
-                .map(SnapshotInfo::getFiles)
-                .orElse(null);
-        if (fileInfos != null) {
-            for (final var fileInfo : fileInfos) {
-                FileUtils.copyFileToDirectory(fileInfo.getPath().toFile(), dbPath.toFile());
-            }
-            log.info("successfully load snapshot with index: {}", latestSnapshot.getTermIndex());
-            final var termIndex = latestSnapshot.getTermIndex();
+        FileUtils.deleteDirectory(dataDir);
+        FileUtils.createParentDirectories(dataDir);
+
+        final var latestSnapshotDir = storage.findLatestSnapshotDir();
+        if (latestSnapshotDir.isPresent()) {
+            FileUtils.copyDirectory(latestSnapshotDir.get(), dataDir);
+            final var termIndex = SnapshotStorage.getTermIndexFromDir(latestSnapshotDir.get());
+            log.info("successfully load snapshot with index: {}", termIndex);
             updateLastAppliedTermIndex(termIndex.getTerm(), termIndex.getIndex());
         }
+
         try (Options options = new Options().setCreateIfMissing(true)) {
-            db = RocksDB.open(options, dbPath.toAbsolutePath().toString());
+            db = RocksDB.open(options, dataDir.getAbsolutePath());
         } catch (RocksDBException e) {
             throw new IOException(e);
         }
@@ -94,12 +89,12 @@ public class DataMapStateMachine extends BaseStateMachine {
     @Override
     public long takeSnapshot() {
         final var latestIndex = getLastAppliedTermIndex();
-        final var directory = storage.getSnapshotDirectory(latestIndex.getTerm(), latestIndex.getIndex());
+        final var directory = storage.getSnapshotDirectory(latestIndex);
         if (db != null) {
             try (final var checkpoint = Checkpoint.create(db)) {
                 final var path = directory.getAbsolutePath();
                 checkpoint.createCheckpoint(path);
-                log.info("successfully create snapshot for index: {}, path: {}", latestIndex, path);
+                log.info("successfully create snapshot for index: {}, path: {}", latestIndex, directory);
                 return latestIndex.getIndex();
             } catch (RocksDBException e) {
                 log.warn("cannot take snapshot for index: {}", latestIndex, e);
