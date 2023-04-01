@@ -23,4 +23,4 @@ extensions = ["proto"]
 
 [properties]
 inceptionYear = 2022
-copyrightOwner = "tison <wander4096@gmail.com>"
+copyrightOwner = "Korandoru Contributors"
