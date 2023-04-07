@@ -16,7 +16,7 @@ class GenerationTest {
     @Test
     void testWalk() {
         final List<Revision> revisions = List.of(new Revision(2, 0), new Revision(4, 0), new Revision(6, 0));
-        final Generation generation = new Generation(3, revisions.get(0), revisions);
+        final Generation generation = new Generation(0, revisions.get(0), revisions);
         record TestCase(Predicate<Revision> predicate, int result) {
         }
         final TestCase[] tests = new TestCase[]{
