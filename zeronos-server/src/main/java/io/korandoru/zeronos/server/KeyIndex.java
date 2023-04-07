@@ -3,8 +3,6 @@ package io.korandoru.zeronos.server;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +12,6 @@ import org.jetbrains.annotations.VisibleForTesting;
 @Data
 @Slf4j
 public class KeyIndex {
-
-    public static final Comparator<KeyIndex> KEY_COMPARATOR = (o1, o2) -> Arrays.compare(o1.key, o2.key);
 
     /**
      * The main rev of the last modification.
@@ -39,6 +35,10 @@ public class KeyIndex {
     private KeyIndex(byte[] key, List<Generation> generations) {
         this.key = key;
         this.generations = generations;
+    }
+
+    public static KeyIndex of(BytesKey  key) {
+        return new KeyIndex(key.key(), new ArrayList<>());
     }
 
     public void put(Revision revision) {
@@ -89,19 +89,11 @@ public class KeyIndex {
     @Nullable
     @VisibleForTesting
     Generation findGeneration(long revision) {
-        final int lastGeneration = generations.size() - 1;
-        int idx = lastGeneration;
-        while (idx >= 0) {
+        for (int idx = generations.size() - 1; idx >= 0; idx--) {
             final Generation generation = generations.get(idx);
-            if (generation.getRevisions().isEmpty()) {
-                idx--;
-                continue;
-            }
-            if (idx != lastGeneration) {
-                final List<Revision> revisions = generation.getRevisions();
-                if (revisions.get(revisions.size() - 1).getMain() <= revision) {
-                    return null;
-                }
+            final List<Revision> revisions = generation.getRevisions();
+            if (revisions.get(revisions.size() - 1).getMain() <= revision) {
+                return null;
             }
             if (generation.getRevisions().get(0).getMain() <= revision) {
                 return generation;
