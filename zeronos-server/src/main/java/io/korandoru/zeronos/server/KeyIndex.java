@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @Data
 @Slf4j
@@ -60,6 +62,53 @@ public class KeyIndex {
         generation.increase();
 
         modified = revision;
+    }
+
+    public Revision get(long revision) {
+        if (generations.isEmpty()) {
+            final ZeronosServerException e = new ZeronosServerException();
+            log.atError()
+                    .addKeyValue("key", new String(key))
+                    .log("'get' got an unexpected empty keyIndex", e);
+            throw e;
+        }
+
+        final Generation generation = findGeneration(revision);
+        if (generation == null || generation.isEmpty()) {
+            throw new ZeronosServerException();
+        }
+
+        final int n = generation.walk(r -> r.getMain() > revision);
+        if (n != -1) {
+            return generation.getRevisions().get(n);
+        }
+
+        throw new ZeronosServerException();
+    }
+
+    @Nullable
+    @VisibleForTesting
+    Generation findGeneration(long revision) {
+        final int lastGeneration = generations.size() - 1;
+        int idx = lastGeneration;
+        while (idx >= 0) {
+            final Generation generation = generations.get(idx);
+            if (generation.getRevisions().isEmpty()) {
+                idx--;
+                continue;
+            }
+            if (idx != lastGeneration) {
+                final List<Revision> revisions = generation.getRevisions();
+                if (revisions.get(revisions.size() - 1).getMain() <= revision) {
+                    return null;
+                }
+            }
+            if (generation.getRevisions().get(0).getMain() <= revision) {
+                return generation;
+            }
+            idx--;
+        }
+        return null;
     }
 
     public void tombstone(Revision revision) {
