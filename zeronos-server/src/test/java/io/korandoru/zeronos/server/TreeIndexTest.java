@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import io.korandoru.zeronos.server.record.IndexGetResult;
-import io.korandoru.zeronos.server.record.IndexRevisionsResult;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -84,9 +83,9 @@ class TreeIndexTest {
                 new TestCase("foo", "fop", 3, 3, 3, new Revision(1), new Revision(2), new Revision(3)),
         };
         for (TestCase test : tests) {
-            final IndexRevisionsResult result = treeIndex.revisions(test.key, test.end, test.revision, test.limit);
-            assertThat(result.getRevisions()).isEqualTo(test.revisions);
-            assertThat(result.getTotal()).isEqualTo(test.count);
+            assertThat(treeIndex.range(test.key, test.end, test.revision).getTotal()).isEqualTo(test.count);
+            assertThat(treeIndex.range(test.key, test.end, test.revision, test.limit).getTotal()).isEqualTo(test.count);
+            assertThat(treeIndex.range(test.key, test.end, test.revision, test.limit).getRevisions()).isEqualTo(test.revisions);
         }
     }
 

@@ -3,7 +3,7 @@ package io.korandoru.zeronos.server;
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import io.korandoru.zeronos.server.record.IndexGetResult;
-import io.korandoru.zeronos.server.record.IndexRevisionsResult;
+import io.korandoru.zeronos.server.record.IndexRangeResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,16 +54,22 @@ public class TreeIndex {
         }
     }
 
-    public IndexRevisionsResult revisions(byte[] key, byte[] end, long revision, int limit) {
+    public IndexRangeResult range(byte[] key, byte[] end, long revision) {
+        return range(key, end, revision, 0);
+    }
+
+    public IndexRangeResult range(byte[] key, byte[] end, long revision, int limit) {
         lock.readLock().lock();
         try {
             final List<Revision> revisions = new ArrayList<>();
+            final List<KeyBytes> keys = new ArrayList<>();
             final AtomicInteger count = new AtomicInteger();
 
             if (end == null) {
                 try {
                     final IndexGetResult result = unsafeGet(key, revision);
                     revisions.add(result.getModified());
+                    keys.add(new KeyBytes(key));
                     count.incrementAndGet();
                 } catch (ZeronosServerException.RevisionNotFound ignore) {
                     // not found - return empty result
@@ -74,6 +80,7 @@ public class TreeIndex {
                         final IndexGetResult result = keyIndex.get(revision);
                         if (limit <= 0 || revisions.size() < limit) {
                             revisions.add(result.getModified());
+                            keys.add(new KeyBytes(keyIndex.getKey()));
                         }
                         count.incrementAndGet();
                     } catch (ZeronosServerException.RevisionNotFound ignore) {
@@ -83,7 +90,7 @@ public class TreeIndex {
                 });
             }
 
-            return new IndexRevisionsResult(revisions, count.get());
+            return new IndexRangeResult(revisions, keys, count.get());
         } finally {
             lock.readLock().unlock();
         }
