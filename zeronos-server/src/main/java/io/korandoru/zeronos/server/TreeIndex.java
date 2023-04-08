@@ -2,11 +2,14 @@ package io.korandoru.zeronos.server;
 
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
+import io.korandoru.zeronos.server.record.IndexGetResult;
+import io.korandoru.zeronos.server.record.IndexRevisionsResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -42,7 +45,7 @@ public class TreeIndex {
         }
     }
 
-    public Revision get(byte[] key, long revision) {
+    public IndexGetResult get(byte[] key, long revision) {
         lock.readLock().lock();
         try {
             return unsafeGet(key, revision);
@@ -51,28 +54,34 @@ public class TreeIndex {
         }
     }
 
-    public List<Revision> revisions(byte[] key, byte[] end, long revision, int limit) {
+    public IndexRevisionsResult revisions(byte[] key, byte[] end, long revision, int limit) {
         lock.readLock().lock();
         try {
+            final List<Revision> revisions = new ArrayList<>();
+
+            AtomicInteger count = new AtomicInteger();
             if (end == null) {
-                return List.of(unsafeGet(key, revision));
+                IndexGetResult result = unsafeGet(key, revision);
+                revisions.add(result.getModified());
+                count.incrementAndGet();
+            } else {
+                unsafeVisit(key, end, keyIndex -> {
+                    final IndexGetResult result = keyIndex.get(revision);
+                    if (limit <= 0 || revisions.size() < limit) {
+                        revisions.add(result.getModified());
+                    }
+                    count.incrementAndGet();
+                    return true;
+                });
             }
 
-            final List<Revision> revisions = new ArrayList<>();
-            unsafeVisit(key, end, keyIndex -> {
-                final Revision rev = keyIndex.get(revision);
-                if (limit <= 0 || revisions.size() < limit) {
-                    revisions.add(rev);
-                }
-                return true;
-            });
-            return revisions;
+            return new IndexRevisionsResult(revisions, count.get());
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    private Revision unsafeGet(byte[] key, long revision) {
+    private IndexGetResult unsafeGet(byte[] key, long revision) {
         final KeyIndex keyIndex = m.get(new KeyBytes(key));
         if (keyIndex == null) {
             throw new ZeronosServerException.RevisionNotFound();

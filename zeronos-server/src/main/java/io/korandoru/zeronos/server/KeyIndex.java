@@ -2,6 +2,7 @@ package io.korandoru.zeronos.server;
 
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
+import io.korandoru.zeronos.server.record.IndexGetResult;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,7 @@ public class KeyIndex {
         modified = revision;
     }
 
-    public Revision get(long revision) {
+    public IndexGetResult get(long revision) {
         if (generations.isEmpty()) {
             final ZeronosServerException e = new ZeronosServerException.FatalError();
             log.atError()
@@ -80,7 +81,10 @@ public class KeyIndex {
 
         final int n = generation.walk(r -> r.getMain() > revision);
         if (n != -1) {
-            return generation.getRevision(n);
+            final Revision modified = generation.getRevision(n);
+            final Revision created = generation.getCreated();
+            final long version = generation.getVersion() - (generation.getRevisionSize() - n - 1);
+            return new IndexGetResult(modified, created, version);
         }
 
         throw new ZeronosServerException.RevisionNotFound();
