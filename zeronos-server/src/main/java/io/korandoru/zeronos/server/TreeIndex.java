@@ -58,19 +58,27 @@ public class TreeIndex {
         lock.readLock().lock();
         try {
             final List<Revision> revisions = new ArrayList<>();
+            final AtomicInteger count = new AtomicInteger();
 
-            AtomicInteger count = new AtomicInteger();
             if (end == null) {
-                IndexGetResult result = unsafeGet(key, revision);
-                revisions.add(result.getModified());
-                count.incrementAndGet();
+                try {
+                    final IndexGetResult result = unsafeGet(key, revision);
+                    revisions.add(result.getModified());
+                    count.incrementAndGet();
+                } catch (ZeronosServerException.RevisionNotFound ignore) {
+                    // not found - return empty result
+                }
             } else {
                 unsafeVisit(key, end, keyIndex -> {
-                    final IndexGetResult result = keyIndex.get(revision);
-                    if (limit <= 0 || revisions.size() < limit) {
-                        revisions.add(result.getModified());
+                    try {
+                        final IndexGetResult result = keyIndex.get(revision);
+                        if (limit <= 0 || revisions.size() < limit) {
+                            revisions.add(result.getModified());
+                        }
+                        count.incrementAndGet();
+                    } catch (ZeronosServerException.RevisionNotFound ignore) {
+                        // not found - skip
                     }
-                    count.incrementAndGet();
                     return true;
                 });
             }
@@ -93,7 +101,7 @@ public class TreeIndex {
         final KeyBytes keyBytes = new KeyBytes(key);
         final KeyBytes endBytes = new KeyBytes(end);
 
-        for (Map.Entry<KeyBytes, KeyIndex> e: m.tailMap(keyBytes).entrySet()) {
+        for (Map.Entry<KeyBytes, KeyIndex> e : m.tailMap(keyBytes).entrySet()) {
             if (!endBytes.isInfinite() && e.getKey().compareTo(endBytes) >= 0) {
                 return;
             }

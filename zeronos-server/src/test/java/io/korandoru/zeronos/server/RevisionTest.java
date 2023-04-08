@@ -9,9 +9,9 @@ class RevisionTest {
     void testRevision() {
         final Revision[] revisions = new Revision[]{
                 new Revision(),
-                new Revision(1, 0),
+                new Revision(1),
                 new Revision(1, 1),
-                new Revision(2, 0),
+                new Revision(2),
                 new Revision(Long.MAX_VALUE, Long.MAX_VALUE),
         };
 

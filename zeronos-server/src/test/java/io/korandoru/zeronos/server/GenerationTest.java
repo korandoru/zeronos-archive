@@ -10,12 +10,12 @@ class GenerationTest {
     @Test
     void testIsEmpty() {
         assertThat(new Generation(0, new Revision(), List.of()).isEmpty()).isTrue();
-        assertThat(new Generation(0, new Revision(), List.of(new Revision(1, 0))).isEmpty()).isFalse();
+        assertThat(new Generation(0, new Revision(), List.of(new Revision(1))).isEmpty()).isFalse();
     }
 
     @Test
     void testWalk() {
-        final List<Revision> revisions = List.of(new Revision(2, 0), new Revision(4, 0), new Revision(6, 0));
+        final List<Revision> revisions = List.of(new Revision(2), new Revision(4), new Revision(6));
         final Generation generation = new Generation(0, revisions.get(0), revisions);
         record TestCase(Predicate<Revision> predicate, int result) {
         }

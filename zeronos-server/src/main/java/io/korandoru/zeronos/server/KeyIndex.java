@@ -93,10 +93,13 @@ public class KeyIndex {
     @Nullable
     @VisibleForTesting
     Generation findGeneration(long revision) {
-        for (int idx = generations.size() - 1; idx >= 0; idx--) {
+        final int lastGeneration = generations.size() - 1;
+        for (int idx = lastGeneration; idx >= 0; idx--) {
             final Generation generation = generations.get(idx);
-            if (generation.getLastRevision().getMain() <= revision) {
-                return null;
+            if (idx < lastGeneration || newGeneration) {
+                if (generation.getLastRevision().getMain() <= revision) {
+                    return null;
+                }
             }
             if (generation.getFirstRevision().getMain() <= revision) {
                 return generation;

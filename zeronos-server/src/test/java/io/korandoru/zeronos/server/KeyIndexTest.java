@@ -11,29 +11,29 @@ class KeyIndexTest {
     @Test
     void testTombstone() {
         final KeyIndex keyIndex0 = KeyIndex.of("foo");
-        keyIndex0.put(new Revision(5, 0));
-        keyIndex0.tombstone(new Revision(7, 0));
+        keyIndex0.put(new Revision(5));
+        keyIndex0.tombstone(new Revision(7));
 
         {
             final KeyIndex keyIndex1 = KeyIndex.of("foo");
-            keyIndex1.setModified(new Revision(7, 0));
-            keyIndex1.getGenerations().add(new Generation(2, new Revision(5, 0), List.of(new Revision(5, 0), new Revision(7, 0))));
+            keyIndex1.setModified(new Revision(7));
+            keyIndex1.getGenerations().add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
             assertThat(keyIndex0).isEqualTo(keyIndex1);
         }
 
-        keyIndex0.put(new Revision(8, 0));
-        keyIndex0.put(new Revision(9, 0));
-        keyIndex0.tombstone(new Revision(15, 0));
+        keyIndex0.put(new Revision(8));
+        keyIndex0.put(new Revision(9));
+        keyIndex0.tombstone(new Revision(15));
 
         {
             final KeyIndex keyIndex1 = KeyIndex.of("foo");
-            keyIndex1.setModified(new Revision(15, 0));
-            keyIndex1.getGenerations().add(new Generation(2, new Revision(5, 0), List.of(new Revision(5, 0), new Revision(7, 0))));
-            keyIndex1.getGenerations().add(new Generation(3, new Revision(8, 0), List.of(new Revision(8, 0), new Revision(9, 0), new Revision(15, 0))));
+            keyIndex1.setModified(new Revision(15));
+            keyIndex1.getGenerations().add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
+            keyIndex1.getGenerations().add(new Generation(3, new Revision(8), List.of(new Revision(8), new Revision(9), new Revision(15))));
             assertThat(keyIndex0).isEqualTo(keyIndex1);
         }
 
-        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> keyIndex0.tombstone(new Revision(16, 0)));
+        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> keyIndex0.tombstone(new Revision(16)));
     }
 
     @Test
@@ -59,15 +59,15 @@ class KeyIndexTest {
 
     private static KeyIndex createTestKeyIndex() {
         final KeyIndex keyIndex = KeyIndex.of("foo");
-        keyIndex.put(new Revision(2, 0));
-        keyIndex.put(new Revision(4, 0));
-        keyIndex.tombstone(new Revision(6, 0));
-        keyIndex.put(new Revision(8, 0));
-        keyIndex.put(new Revision(10, 0));
-        keyIndex.tombstone(new Revision(12, 0));
-        keyIndex.put(new Revision(14, 0));
+        keyIndex.put(new Revision(2));
+        keyIndex.put(new Revision(4));
+        keyIndex.tombstone(new Revision(6));
+        keyIndex.put(new Revision(8));
+        keyIndex.put(new Revision(10));
+        keyIndex.tombstone(new Revision(12));
+        keyIndex.put(new Revision(14));
         keyIndex.put(new Revision(14, 1));
-        keyIndex.tombstone(new Revision(16, 0));
+        keyIndex.tombstone(new Revision(16));
         return keyIndex;
     }
 

@@ -10,7 +10,11 @@ public class Revision implements Comparable<Revision> {
     private final long sub;
 
     public Revision() {
-        this(0, 0);
+        this(0);
+    }
+
+    public Revision(long main) {
+        this(main, 0);
     }
 
     public Revision(long main, long sub) {
