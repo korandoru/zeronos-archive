@@ -29,6 +29,7 @@
     <modules>
         <module>zeronos-bom</module>
         <module>zeronos-parent</module>
+        <module>zeronos-proto</module>
         <module>zeronos-server</module>
     </modules>
 

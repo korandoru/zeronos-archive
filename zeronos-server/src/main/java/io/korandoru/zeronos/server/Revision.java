@@ -2,6 +2,7 @@ package io.korandoru.zeronos.server;
 
 import java.util.Comparator;
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 @Data
 public class Revision implements Comparable<Revision> {
@@ -18,7 +19,7 @@ public class Revision implements Comparable<Revision> {
     }
 
     @Override
-    public int compareTo(Revision o) {
+    public int compareTo(@NotNull Revision o) {
         return Comparator.comparing(Revision::getMain)
                 .thenComparing(Revision::getSub)
                 .compare(this, o);

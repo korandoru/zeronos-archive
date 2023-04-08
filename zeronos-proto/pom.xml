@@ -11,19 +11,7 @@
         <relativePath>../zeronos-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>zeronos-server</artifactId>
+    <artifactId>zeronos-proto</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.korandoru.zeronos</groupId>
-            <artifactId>zeronos-proto</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-        </dependency>
-    </dependencies>
 
 </project>

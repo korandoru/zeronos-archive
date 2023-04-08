@@ -1,5 +1,6 @@
 package io.korandoru.zeronos.server;
 
+import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -37,8 +38,8 @@ public class KeyIndex {
         this.generations = generations;
     }
 
-    public static KeyIndex of(BytesKey  key) {
-        return new KeyIndex(key.key(), new ArrayList<>());
+    public static KeyIndex of(KeyBytes key) {
+        return new KeyIndex(key.getKey(), new ArrayList<>());
     }
 
     public void put(Revision revision) {
