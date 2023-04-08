@@ -2,6 +2,8 @@ package io.korandoru.zeronos.server;
 
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -44,6 +46,27 @@ public class TreeIndex {
         lock.readLock().lock();
         try {
             return unsafeGet(key, revision);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public List<Revision> revisions(byte[] key, byte[] end, long revision, int limit) {
+        lock.readLock().lock();
+        try {
+            if (end == null) {
+                return List.of(unsafeGet(key, revision));
+            }
+
+            final List<Revision> revisions = new ArrayList<>();
+            unsafeVisit(key, end, keyIndex -> {
+                final Revision rev = keyIndex.get(revision);
+                if (limit <= 0 || revisions.size() < limit) {
+                    revisions.add(rev);
+                }
+                return true;
+            });
+            return revisions;
         } finally {
             lock.readLock().unlock();
         }
