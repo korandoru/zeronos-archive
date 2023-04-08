@@ -1,0 +1,41 @@
+syntax = "proto3";
+package rpcpb;
+
+import "mvcc.proto";
+
+option java_package = "io.korandoru.zeronos.proto";
+option java_multiple_files = true;
+option java_outer_classname = 'RpcProtos';
+option java_generate_equals_and_hash = true;
+
+service KV {
+  rpc Range(RangeRequest) returns (RangeResponse) {}
+  rpc Put(PutRequest) returns (PutResponse) {}
+}
+
+message ResponseHeader {
+  int64 revision = 1;
+}
+
+message RangeRequest {
+  bytes key = 1;
+  bytes range_end = 2;
+  int64 limit = 3;
+  int64 revision = 4;
+}
+
+message RangeResponse {
+  ResponseHeader header = 1;
+  repeated mvccpb.KeyValue kvs = 2;
+  bool more = 3;
+  int64 count = 4;
+}
+
+message PutRequest {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message PutResponse {
+  ResponseHeader header = 1;
+}
