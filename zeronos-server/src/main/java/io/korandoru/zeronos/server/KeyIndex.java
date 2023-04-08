@@ -44,7 +44,7 @@ public class KeyIndex {
 
     public void put(Revision revision) {
         if (revision.compareTo(modified) < 0) {
-            final ZeronosServerException e = new ZeronosServerException();
+            final ZeronosServerException e = new ZeronosServerException.FatalError();
             log.atError()
                     .addKeyValue("given-revision", revision)
                     .addKeyValue("modified-revision", modified)
@@ -66,7 +66,7 @@ public class KeyIndex {
 
     public Revision get(long revision) {
         if (generations.isEmpty()) {
-            final ZeronosServerException e = new ZeronosServerException();
+            final ZeronosServerException e = new ZeronosServerException.FatalError();
             log.atError()
                     .addKeyValue("key", new String(key))
                     .log("'get' got an unexpected empty keyIndex", e);
@@ -75,7 +75,7 @@ public class KeyIndex {
 
         final Generation generation = findGeneration(revision);
         if (generation == null || generation.isEmpty()) {
-            throw new ZeronosServerException();
+            throw new ZeronosServerException.RevisionNotFound();
         }
 
         final int n = generation.walk(r -> r.getMain() > revision);
@@ -83,7 +83,7 @@ public class KeyIndex {
             return generation.getRevision(n);
         }
 
-        throw new ZeronosServerException();
+        throw new ZeronosServerException.RevisionNotFound();
     }
 
     @Nullable
@@ -102,12 +102,16 @@ public class KeyIndex {
     }
 
     public void tombstone(Revision revision) {
-        if (newGeneration) {
-            final ZeronosServerException e = new ZeronosServerException();
+        if (generations.isEmpty()) {
+            final ZeronosServerException e = new ZeronosServerException.FatalError();
             log.atError()
                     .addKeyValue("key", new String(key))
                     .log("'tombstone' got an unexpected empty keyIndex", e);
             throw e;
+        }
+
+        if (newGeneration) {
+            throw new ZeronosServerException.RevisionNotFound();
         }
 
         put(revision);

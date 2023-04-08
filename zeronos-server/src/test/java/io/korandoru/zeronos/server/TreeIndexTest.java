@@ -16,13 +16,13 @@ class TreeIndexTest {
         treeIndex.put(key.getKey(), new Revision(4, 0));
         treeIndex.tombstone(key.getKey(), new Revision(6, 0));
 
-        assertThrows(ZeronosServerException.class, () -> treeIndex.get(key.getKey(), 0));
-        assertThrows(ZeronosServerException.class, () -> treeIndex.get(key.getKey(), 1));
+        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> treeIndex.get(key.getKey(), 0));
+        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> treeIndex.get(key.getKey(), 1));
         assertThat(treeIndex.get(key.getKey(), 2)).isEqualTo(new Revision(2, 0));
         assertThat(treeIndex.get(key.getKey(), 3)).isEqualTo(new Revision(2, 0));
         assertThat(treeIndex.get(key.getKey(), 4)).isEqualTo(new Revision(4, 0));
         assertThat(treeIndex.get(key.getKey(), 5)).isEqualTo(new Revision(4, 0));
-        assertThrows(ZeronosServerException.class, () -> treeIndex.get(key.getKey(), 6));
+        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> treeIndex.get(key.getKey(), 6));
     }
 
 }

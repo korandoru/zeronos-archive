@@ -34,7 +34,7 @@ public class TreeIndex {
         try {
             final KeyIndex keyIndex = m.get(new KeyBytes(key));
             if (keyIndex == null) {
-                throw new ZeronosServerException();
+                throw new ZeronosServerException.RevisionNotFound();
             }
             keyIndex.tombstone(revision);
         } finally {
@@ -75,7 +75,7 @@ public class TreeIndex {
     private Revision unsafeGet(byte[] key, long revision) {
         final KeyIndex keyIndex = m.get(new KeyBytes(key));
         if (keyIndex == null) {
-            throw new ZeronosServerException();
+            throw new ZeronosServerException.RevisionNotFound();
         }
         return keyIndex.get(revision);
     }

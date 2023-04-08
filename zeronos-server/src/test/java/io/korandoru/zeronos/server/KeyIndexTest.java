@@ -33,7 +33,7 @@ class KeyIndexTest {
             assertThat(keyIndex0).isEqualTo(keyIndex1);
         }
 
-        assertThrows(ZeronosServerException.class, () -> keyIndex0.tombstone(new Revision(16, 0)));
+        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> keyIndex0.tombstone(new Revision(16, 0)));
     }
 
     @Test
