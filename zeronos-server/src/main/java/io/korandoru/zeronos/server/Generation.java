@@ -28,16 +28,12 @@ public class Generation {
         return revisions.get(n);
     }
 
-    public int getRevisionSize() {
-        return revisions.size();
-    }
-
     public Revision getFirstRevision() {
-        return getRevision(0);
+        return revisions.get(0);
     }
 
     public Revision getLastRevision() {
-        return getRevision(getRevisionSize() - 1);
+        return revisions.get(revisions.size() - 1);
     }
 
     public void addRevision(Revision revision) {

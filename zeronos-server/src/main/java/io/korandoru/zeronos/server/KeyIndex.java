@@ -79,11 +79,11 @@ public class KeyIndex {
             throw new ZeronosServerException.RevisionNotFound();
         }
 
-        final int n = generation.walk(r -> r.getMain() > revision);
-        if (n != -1) {
-            final Revision modified = generation.getRevision(n);
+        final int idx = generation.walk(r -> r.getMain() > revision);
+        if (idx != -1) {
+            final Revision modified = generation.getRevision(idx);
             final Revision created = generation.getCreated();
-            final long version = generation.getVersion() - (generation.getRevisionSize() - n - 1);
+            final long version = idx + 1; // shift to 1-base
             return new IndexGetResult(modified, created, version);
         }
 
