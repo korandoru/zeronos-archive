@@ -5,6 +5,7 @@ import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.Setter;
 
 @AllArgsConstructor
@@ -19,14 +20,29 @@ public class Generation {
      */
     private final Revision created;
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private final List<Revision> revisions;
+
+    public Revision getRevision(int n) {
+        return revisions.get(n);
+    }
+
+    public Revision getFirstRevision() {
+        return revisions.get(0);
+    }
+
+    public Revision getLastRevision() {
+        return revisions.get(revisions.size() - 1);
+    }
+
+    public void addRevision(Revision revision) {
+        revisions.add(revision);
+        version++;
+    }
 
     public boolean isEmpty() {
         return revisions.isEmpty();
-    }
-
-    public void increase() {
-        version++;
     }
 
     public int walk(Predicate<Revision> predicate) {

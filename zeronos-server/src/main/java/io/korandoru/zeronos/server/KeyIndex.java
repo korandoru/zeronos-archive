@@ -59,8 +59,7 @@ public class KeyIndex {
 
         assert !generations.isEmpty();
         final Generation generation = generations.get(generations.size() - 1);
-        generation.getRevisions().add(revision);
-        generation.increase();
+        generation.addRevision(revision);
 
         modified = revision;
     }
@@ -81,7 +80,7 @@ public class KeyIndex {
 
         final int n = generation.walk(r -> r.getMain() > revision);
         if (n != -1) {
-            return generation.getRevisions().get(n);
+            return generation.getRevision(n);
         }
 
         throw new ZeronosServerException();
@@ -92,14 +91,12 @@ public class KeyIndex {
     Generation findGeneration(long revision) {
         for (int idx = generations.size() - 1; idx >= 0; idx--) {
             final Generation generation = generations.get(idx);
-            final List<Revision> revisions = generation.getRevisions();
-            if (revisions.get(revisions.size() - 1).getMain() <= revision) {
+            if (generation.getLastRevision().getMain() <= revision) {
                 return null;
             }
-            if (generation.getRevisions().get(0).getMain() <= revision) {
+            if (generation.getFirstRevision().getMain() <= revision) {
                 return generation;
             }
-            idx--;
         }
         return null;
     }
