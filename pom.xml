@@ -37,11 +37,12 @@
         <jetbrains-annotations.version>24.0.1</jetbrains-annotations.version>
         <junit.version>5.9.2</junit.version>
         <lombok.version>1.18.26</lombok.version>
-        <ratis-thirdparty.version>1.0.3</ratis-thirdparty.version>
-        <ratis.version>2.4.1</ratis.version>
-        <slf4j.version>2.0.7</slf4j.version>
         <protobuf3.version>3.21.7</protobuf3.version>
         <protoc3.version>${protobuf3.version}</protoc3.version>
+        <ratis-thirdparty.version>1.0.3</ratis-thirdparty.version>
+        <ratis.version>2.4.1</ratis.version>
+        <rocksdbjni.version>8.0.0</rocksdbjni.version>
+        <slf4j.version>2.0.7</slf4j.version>
 
         <!-- bundled maven plugins -->
         <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>

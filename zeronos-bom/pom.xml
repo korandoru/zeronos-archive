@@ -85,6 +85,11 @@
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf3.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdbjni.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
