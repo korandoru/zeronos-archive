@@ -39,18 +39,6 @@
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-services</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -61,8 +49,6 @@
                 <version>${protobuf-maven-plugin.version}</version>
                 <configuration>
                     <protocArtifact>com.google.protobuf:protoc:${protoc3.version}:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
                     <checkStaleness>true</checkStaleness>
                 </configuration>
                 <executions>
@@ -70,9 +56,7 @@
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>compile</goal>
-                            <goal>compile-custom</goal>
                             <goal>test-compile</goal>
-                            <goal>test-compile-custom</goal>
                         </goals>
                     </execution>
                 </executions>

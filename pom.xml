@@ -34,7 +34,6 @@
         <!-- lib dependencies -->
         <assertj.version>3.24.2</assertj.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <grpc.version>1.54.0</grpc.version>
         <jetbrains-annotations.version>24.0.1</jetbrains-annotations.version>
         <junit.version>5.9.2</junit.version>
         <lombok.version>1.18.26</lombok.version>

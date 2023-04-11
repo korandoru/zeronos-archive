@@ -24,11 +24,6 @@ option java_multiple_files = true;
 option java_outer_classname = 'RpcProtos';
 option java_generate_equals_and_hash = true;
 
-service KV {
-  rpc Range(RangeRequest) returns (RangeResponse) {}
-  rpc Put(PutRequest) returns (PutResponse) {}
-}
-
 message ResponseHeader {
   int64 revision = 1;
 }
