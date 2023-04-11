@@ -16,6 +16,7 @@
 
 package io.korandoru.zeronos.server.index;
 
+import java.nio.ByteBuffer;
 import java.util.Comparator;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,22 @@ public class Revision implements Comparable<Revision> {
     public Revision(long main, long sub) {
         this.main = main;
         this.sub = sub;
+    }
+
+    public byte[] toBytes() {
+        return toBytes(false);
+    }
+
+    public byte[] toBytes(boolean tombstone) {
+        final byte[] bytes = new byte[18]; // long(8) + _(1) + long(8) + (optional) t(1)
+        final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        buffer.putLong(main);
+        buffer.put((byte) '_');
+        buffer.putLong(sub);
+        if (tombstone) {
+            buffer.put((byte) 't');
+        }
+        return bytes;
     }
 
     @Override

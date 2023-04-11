@@ -58,8 +58,8 @@ class TreeIndexTest {
         treeIndex.put(new KeyBytes("foo1").getKey(), new Revision(5));
         treeIndex.put(new KeyBytes("foo").getKey(), new Revision(6));
 
-        record TestCase(byte[] key, byte[] end, long revision, int limit, List<Revision> revisions, int count) {
-            TestCase(String key, String end, long revision, int limit, int count, Revision... revisions) {
+        record TestCase(byte[] key, byte[] end, long revision, int limit, List<Revision> revisions, long count) {
+            TestCase(String key, String end, long revision, int limit, long count, Revision... revisions) {
                 this(
                         key.getBytes(StandardCharsets.UTF_8),
                         end != null ? end.getBytes(StandardCharsets.UTF_8) : null,

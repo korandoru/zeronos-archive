@@ -32,11 +32,23 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.korandoru.zeronos</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>zeronos-proto</artifactId>
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ratis</groupId>
+            <artifactId>ratis-grpc</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>

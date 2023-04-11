@@ -74,7 +74,7 @@ public class TreeIndex {
         return range(key, end, revision, 0);
     }
 
-    public IndexRangeResult range(byte[] key, byte[] end, long revision, int limit) {
+    public IndexRangeResult range(byte[] key, byte[] end, long revision, long limit) {
         lock.readLock().lock();
         try {
             final List<Revision> revisions = new ArrayList<>();

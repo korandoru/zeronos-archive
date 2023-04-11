@@ -31,7 +31,7 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 
 @Slf4j
-public class RocksDBBackend implements Backend {
+public class RocksDBBackend implements Backend, AutoCloseable {
 
     private final RocksDB db;
 
@@ -85,4 +85,8 @@ public class RocksDBBackend implements Backend {
         }
     }
 
+    @Override
+    public void close() {
+        db.close();
+    }
 }

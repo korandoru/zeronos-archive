@@ -1,0 +1,158 @@
+/*
+ * Copyright 2023 Korandoru Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.korandoru.zeronos.server.state;
+
+import io.korandoru.zeronos.proto.KeyValue;
+import io.korandoru.zeronos.proto.PutRequest;
+import io.korandoru.zeronos.proto.PutResponse;
+import io.korandoru.zeronos.proto.RangeRequest;
+import io.korandoru.zeronos.proto.RangeResponse;
+import io.korandoru.zeronos.server.exception.ZeronosServerException;
+import io.korandoru.zeronos.server.index.Revision;
+import io.korandoru.zeronos.server.index.TreeIndex;
+import io.korandoru.zeronos.server.record.BackendRangeResult;
+import io.korandoru.zeronos.server.record.IndexGetResult;
+import io.korandoru.zeronos.server.record.IndexRangeResult;
+import io.korandoru.zeronos.server.storage.Backend;
+import io.korandoru.zeronos.server.storage.Namespace;
+import io.korandoru.zeronos.server.storage.RocksDBBackend;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
+import org.apache.commons.io.FileUtils;
+import org.apache.ratis.proto.RaftProtos;
+import org.apache.ratis.protocol.Message;
+import org.apache.ratis.protocol.RaftGroupId;
+import org.apache.ratis.server.RaftServer;
+import org.apache.ratis.server.storage.RaftStorage;
+import org.apache.ratis.statemachine.TransactionContext;
+import org.apache.ratis.statemachine.impl.BaseStateMachine;
+import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
+
+public class ZeroStateMachine extends BaseStateMachine {
+
+    private File dataDir;
+    private TreeIndex treeIndex;
+    private Backend backend;
+
+    private final AtomicLong revision = new AtomicLong();
+
+    @Override
+    public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
+        super.initialize(raftServer, raftGroupId, raftStorage);
+        dataDir = new File(raftStorage.getStorageDir().getTmpDir(), "backend");
+        reinitialize();
+    }
+
+    @Override
+    public void reinitialize() throws IOException {
+        FileUtils.deleteDirectory(dataDir);
+        FileUtils.createParentDirectories(dataDir);
+        treeIndex = new TreeIndex();
+        backend = new RocksDBBackend(dataDir);
+    }
+
+    @Override
+    public CompletableFuture<Message> query(Message request) {
+        final RangeRequest.Builder req = RangeRequest.newBuilder();
+        try {
+            req.mergeFrom(request.getContent());
+        } catch (InvalidProtocolBufferException e) {
+            return CompletableFuture.failedFuture(e);
+        }
+
+        // decode >= key range
+        final byte[] end;
+        if (req.getRangeEnd().isEmpty()) {
+            end = null;
+        } else {
+            if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
+                end = new byte[0];
+            } else {
+                end = req.getRangeEnd().toByteArray();
+            }
+        }
+
+        final IndexRangeResult r = treeIndex.range(
+                req.getKey().toByteArray(),
+                end,
+                req.getRevision() > 0 ? req.getRevision() : revision.get(),
+                req.getLimit());
+
+        final long bound;
+        if (req.getLimit() <= 0 || req.getLimit() > r.getRevisions().size()) {
+            bound = r.getRevisions().size();
+        } else {
+            bound = req.getLimit();
+        }
+
+        final RangeResponse.Builder resp = RangeResponse.newBuilder();
+        for (int i = 0; i < bound; i++) {
+            final byte[] key = r.getRevisions().get(i).toBytes();
+            final BackendRangeResult rr = backend.unsafeRange(Namespace.KEY, key, null, 0);
+            assert rr.getValues().size() == 1;
+            try {
+                resp.addKvs(KeyValue.parseFrom(rr.getValues().get(0)));
+            } catch (InvalidProtocolBufferException e) {
+                return CompletableFuture.failedFuture(e);
+            }
+        }
+
+        return CompletableFuture.completedFuture(Message.valueOf(resp.build()));
+    }
+
+    @Override
+    public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
+        final PutRequest.Builder req = PutRequest.newBuilder();
+        final RaftProtos.LogEntryProto entry = trx.getLogEntry();
+
+        try {
+            req.mergeFrom(entry.getStateMachineLogEntry().getLogData());
+        } catch (InvalidProtocolBufferException e) {
+            return CompletableFuture.failedFuture(e);
+        }
+
+        final long revision = this.revision.incrementAndGet();
+        final byte[] key = req.getKey().toByteArray();
+
+        long created = revision;
+        long version = 1;
+        try {
+            final IndexGetResult r = treeIndex.get(key, revision);
+            created = r.getCreated().getMain();
+            version = r.getVersion() + 1;
+        } catch (ZeronosServerException.RevisionNotFound ignore) {
+            // no previous reversions - it is fine
+        }
+
+        final Revision rev = new Revision(revision);
+        final KeyValue kv = KeyValue.newBuilder()
+                .setKey(req.getKey())
+                .setValue(req.getValue())
+                .setCreateRevision(created)
+                .setModifyRevision(revision)
+                .setVersion(version)
+                .build();
+
+        backend.unsafePut(Namespace.KEY, rev.toBytes(), kv.toByteArray());
+        treeIndex.put(key, rev);
+
+        final PutResponse.Builder resp = PutResponse.newBuilder();
+        return CompletableFuture.completedFuture(Message.valueOf(resp.build()));
+    }
+}
