@@ -16,12 +16,11 @@
 
 package io.korandoru.zeronos.server.record;
 
-import io.korandoru.zeronos.proto.KeyBytes;
 import java.util.List;
 import lombok.Data;
 
 @Data
 public class BackendRangeResult {
-    private final List<KeyBytes> keys;
+    private final List<byte[]> keys;
     private final List<byte[]> values;
 }

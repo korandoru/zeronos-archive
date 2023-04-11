@@ -21,8 +21,8 @@ import io.korandoru.zeronos.server.record.BackendRangeResult;
 
 public interface Backend {
 
-    BackendRangeResult unsafeRange(Namespace ns, KeyBytes key, KeyBytes end, long limit);
+    BackendRangeResult unsafeRange(Namespace ns, byte[] key, byte[] end, long limit);
 
-    void unsafePut(Namespace ns, KeyBytes key, byte[] value);
+    void unsafePut(Namespace ns, byte[] key, byte[] value);
 
 }

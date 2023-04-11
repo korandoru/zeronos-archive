@@ -16,4 +16,32 @@
 
 package io.korandoru.zeronos.server.storage;
 
-public enum Namespace { KEY }
+import io.korandoru.zeronos.proto.KeyBytes;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+
+public enum Namespace {
+    KEY;
+
+    public byte[] fixKey(byte[] key) {
+        try (final ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            stream.write(ordinal());
+            stream.write(key);
+            return stream.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public byte[] unfixKey(byte[] key) {
+        try (final ByteArrayInputStream stream = new ByteArrayInputStream(key)) {
+            final int ns = stream.read();
+            assert ordinal() == ns;
+            return stream.readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+}
