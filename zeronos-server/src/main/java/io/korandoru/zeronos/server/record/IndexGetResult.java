@@ -16,7 +16,7 @@
 
 package io.korandoru.zeronos.server.record;
 
-import io.korandoru.zeronos.server.Revision;
+import io.korandoru.zeronos.server.index.Revision;
 import lombok.Data;
 
 @Data

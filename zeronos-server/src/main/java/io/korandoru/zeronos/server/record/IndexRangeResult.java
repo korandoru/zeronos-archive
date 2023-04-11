@@ -17,7 +17,7 @@
 package io.korandoru.zeronos.server.record;
 
 import io.korandoru.zeronos.proto.KeyBytes;
-import io.korandoru.zeronos.server.Revision;
+import io.korandoru.zeronos.server.index.Revision;
 import java.util.List;
 import lombok.Data;
 

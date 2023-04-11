@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.korandoru.zeronos.server;
+package io.korandoru.zeronos.server.index;
 
 import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;

@@ -16,7 +16,6 @@
 
 package io.korandoru.zeronos.server.storage;
 
-import io.korandoru.zeronos.proto.KeyBytes;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

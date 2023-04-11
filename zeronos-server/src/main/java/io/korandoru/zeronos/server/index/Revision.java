@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.korandoru.zeronos.server;
+package io.korandoru.zeronos.server.index;
 
 import java.util.Comparator;
 import lombok.Data;

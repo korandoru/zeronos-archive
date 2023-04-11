@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package io.korandoru.zeronos.server;
+package io.korandoru.zeronos.server.index;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
