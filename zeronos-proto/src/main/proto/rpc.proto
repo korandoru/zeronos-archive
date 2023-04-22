@@ -50,3 +50,13 @@ message PutRequest {
 message PutResponse {
   ResponseHeader header = 1;
 }
+
+message DeleteRangeRequest {
+  bytes key = 1;
+  bytes range_end = 2;
+}
+
+message DeleteRangeResponse {
+  ResponseHeader header = 1;
+  int64 deleted = 2;
+}
