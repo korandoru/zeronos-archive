@@ -60,3 +60,19 @@ message DeleteRangeResponse {
   ResponseHeader header = 1;
   int64 deleted = 2;
 }
+
+message RequestOp {
+  oneof request {
+    RangeRequest request_range = 1;
+    PutRequest request_put = 2;
+    DeleteRangeRequest request_delete_range = 3;
+  }
+}
+
+message ResponseOp {
+  oneof response {
+    RangeResponse response_range = 1;
+    PutResponse response_put = 2;
+    DeleteRangeResponse response_delete_range = 3;
+  }
+}
