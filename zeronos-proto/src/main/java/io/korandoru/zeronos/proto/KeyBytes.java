@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HexFormat;
 import lombok.Data;
+import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.jetbrains.annotations.NotNull;
 
 @Data
@@ -47,5 +48,9 @@ public class KeyBytes implements Comparable<KeyBytes> {
     @Override
     public String toString() {
         return HexFormat.of().formatHex(key);
+    }
+
+    public ByteString toByteString() {
+        return ByteString.copyFrom(key);
     }
 }

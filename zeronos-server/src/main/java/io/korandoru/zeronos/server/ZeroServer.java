@@ -16,9 +16,12 @@
 
 package io.korandoru.zeronos.server;
 
+import io.korandoru.zeronos.proto.DeleteRangeRequest;
 import io.korandoru.zeronos.proto.PutRequest;
 import io.korandoru.zeronos.proto.RangeRequest;
 import io.korandoru.zeronos.proto.RangeResponse;
+import io.korandoru.zeronos.proto.RequestOp;
+import io.korandoru.zeronos.proto.ResponseOp;
 import io.korandoru.zeronos.server.state.ZeroStateMachine;
 import java.io.IOException;
 import java.util.UUID;
@@ -88,11 +91,21 @@ public class ZeroServer implements AutoCloseable {
                     .setClientRpc(rpc)
                     .build();
             try (client) {
-                var resp = client.io().send(Message.valueOf(PutRequest.newBuilder()
+                var resp = client.io().send(Message.valueOf(
+                        RequestOp.newBuilder().setRequestPut(PutRequest.newBuilder()
                         .setKey(ByteString.copyFromUtf8("foo"))
                         .setValue(ByteString.copyFromUtf8("bar"))
+                        .build()).build()));
+                System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
+                resp = client.io().sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
+                        .setKey(ByteString.copyFromUtf8("foo"))
                         .build()));
-                System.out.println(resp.getMessage());
+                System.out.println(RangeResponse.parseFrom(resp.getMessage().getContent()));
+                resp = client.io().send(Message.valueOf(
+                        RequestOp.newBuilder().setRequestDeleteRange(DeleteRangeRequest.newBuilder()
+                                .setKey(ByteString.copyFromUtf8("foo"))
+                                .build()).build()));
+                System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
                 resp = client.io().sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
                         .setKey(ByteString.copyFromUtf8("foo"))
                         .build()));

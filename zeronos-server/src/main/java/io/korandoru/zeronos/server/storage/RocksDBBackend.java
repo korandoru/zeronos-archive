@@ -58,7 +58,8 @@ public class RocksDBBackend implements Backend, AutoCloseable {
         final List<byte[]> keys = new ArrayList<>();
         final List<byte[]> values = new ArrayList<>();
         final RocksIterator it = db.newIterator();
-        for (it.seek(ns.fixKey(key)); it.isValid(); it.next()) {
+        final byte[] fixedKey = ns.fixKey(key);
+        for (it.seek(fixedKey); it.isValid(); it.next()) {
             final byte[] bytes = ns.unfixKey(it.key());
             if (!isMatch.test(bytes)) {
                 break;

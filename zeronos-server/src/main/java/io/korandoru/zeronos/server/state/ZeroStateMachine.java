@@ -16,11 +16,16 @@
 
 package io.korandoru.zeronos.server.state;
 
+import io.korandoru.zeronos.proto.DeleteRangeRequest;
+import io.korandoru.zeronos.proto.DeleteRangeResponse;
+import io.korandoru.zeronos.proto.KeyBytes;
 import io.korandoru.zeronos.proto.KeyValue;
 import io.korandoru.zeronos.proto.PutRequest;
 import io.korandoru.zeronos.proto.PutResponse;
 import io.korandoru.zeronos.proto.RangeRequest;
 import io.korandoru.zeronos.proto.RangeResponse;
+import io.korandoru.zeronos.proto.RequestOp;
+import io.korandoru.zeronos.proto.ResponseOp;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import io.korandoru.zeronos.server.index.Revision;
 import io.korandoru.zeronos.server.index.TreeIndex;
@@ -33,12 +38,12 @@ import io.korandoru.zeronos.server.storage.RocksDBBackend;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.io.FileUtils;
 import org.apache.ratis.proto.RaftProtos;
 import org.apache.ratis.protocol.Message;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.server.RaftServer;
+import org.apache.ratis.server.protocol.TermIndex;
 import org.apache.ratis.server.storage.RaftStorage;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
@@ -49,8 +54,6 @@ public class ZeroStateMachine extends BaseStateMachine {
     private File dataDir;
     private TreeIndex treeIndex;
     private Backend backend;
-
-    private final AtomicLong revision = new AtomicLong();
 
     @Override
     public void initialize(RaftServer raftServer, RaftGroupId raftGroupId, RaftStorage raftStorage) throws IOException {
@@ -88,10 +91,11 @@ public class ZeroStateMachine extends BaseStateMachine {
             }
         }
 
+        final TermIndex termIndex = getLastAppliedTermIndex();
         final IndexRangeResult r = treeIndex.range(
                 req.getKey().toByteArray(),
                 end,
-                req.getRevision() > 0 ? req.getRevision() : revision.get(),
+                req.getRevision() > 0 ? req.getRevision() : termIndex.getIndex(),
                 req.getLimit());
 
         final long bound;
@@ -118,41 +122,80 @@ public class ZeroStateMachine extends BaseStateMachine {
 
     @Override
     public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
-        final PutRequest.Builder req = PutRequest.newBuilder();
+        final RequestOp.Builder op = RequestOp.newBuilder();
         final RaftProtos.LogEntryProto entry = trx.getLogEntry();
 
         try {
-            req.mergeFrom(entry.getStateMachineLogEntry().getLogData());
+            op.mergeFrom(entry.getStateMachineLogEntry().getLogData());
         } catch (InvalidProtocolBufferException e) {
             return CompletableFuture.failedFuture(e);
         }
 
-        final long revision = this.revision.incrementAndGet();
-        final byte[] key = req.getKey().toByteArray();
+        Message message = null;
+        switch (op.getRequestCase()) {
+            case REQUEST_PUT -> {
+                final PutRequest req = op.getRequestPut();
+                final long revision = entry.getIndex();
+                final byte[] key = req.getKey().toByteArray();
 
-        long created = revision;
-        long version = 1;
-        try {
-            final IndexGetResult r = treeIndex.get(key, revision);
-            created = r.getCreated().getMain();
-            version = r.getVersion() + 1;
-        } catch (ZeronosServerException.RevisionNotFound ignore) {
-            // no previous reversions - it is fine
+                long created = revision;
+                long version = 1;
+                try {
+                    final IndexGetResult r = treeIndex.get(key, revision);
+                    created = r.getCreated().getMain();
+                    version = r.getVersion() + 1;
+                } catch (ZeronosServerException.RevisionNotFound ignore) {
+                    // no previous reversions - it is fine
+                }
+
+                final Revision rev = new Revision(revision);
+                final KeyValue kv = KeyValue.newBuilder()
+                        .setKey(req.getKey())
+                        .setValue(req.getValue())
+                        .setCreateRevision(created)
+                        .setModifyRevision(revision)
+                        .setVersion(version)
+                        .build();
+
+                backend.unsafePut(Namespace.KEY, rev.toBytes(), kv.toByteArray());
+                treeIndex.put(key, rev);
+                message = Message.valueOf(ResponseOp.newBuilder().setResponsePut(PutResponse.newBuilder().build()).build());
+            }
+            case REQUEST_DELETE_RANGE -> {
+                final DeleteRangeRequest req = op.getRequestDeleteRange();
+                final long revision = entry.getIndex();
+                final byte[] key = req.getKey().toByteArray();
+                // decode >= key range
+                final byte[] end;
+                if (req.getRangeEnd().isEmpty()) {
+                    end = null;
+                } else {
+                    if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
+                        end = new byte[0];
+                    } else {
+                        end = req.getRangeEnd().toByteArray();
+                    }
+                }
+
+                final IndexRangeResult r = treeIndex.range(key, end, revision);
+                final Revision rev = new Revision(revision);
+                for (KeyBytes k : r.getKeys()) {
+                    final KeyValue kv = KeyValue.newBuilder()
+                            .setKey(k.toByteString())
+                            .build();
+                    backend.unsafePut(Namespace.KEY, rev.toBytes(true), kv.toByteArray());
+                    treeIndex.tombstone(k.getKey(), rev);
+                }
+                message = Message.valueOf(ResponseOp.newBuilder().setResponseDeleteRange(DeleteRangeResponse.newBuilder().setDeleted(r.getTotal()).build()).build());
+            }
         }
 
-        final Revision rev = new Revision(revision);
-        final KeyValue kv = KeyValue.newBuilder()
-                .setKey(req.getKey())
-                .setValue(req.getValue())
-                .setCreateRevision(created)
-                .setModifyRevision(revision)
-                .setVersion(version)
-                .build();
+        updateLastAppliedTermIndex(entry.getTerm(), entry.getIndex());
 
-        backend.unsafePut(Namespace.KEY, rev.toBytes(), kv.toByteArray());
-        treeIndex.put(key, rev);
-
-        final PutResponse.Builder resp = PutResponse.newBuilder();
-        return CompletableFuture.completedFuture(Message.valueOf(resp.build()));
+        if (message != null) {
+            return CompletableFuture.completedFuture(message);
+        } else {
+            return CompletableFuture.failedFuture(new NullPointerException("message is not initialized"));
+        }
     }
 }
