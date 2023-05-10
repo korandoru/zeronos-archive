@@ -22,13 +22,22 @@ option java_multiple_files = true;
 option java_outer_classname = 'MvccProtos';
 option java_generate_equals_and_hash = true;
 
+message Revision {
+  // main is the main revision of a set of changes that happen atomically
+  int64 main = 1;
+  // sub is the sub revision of a change in a set of changes that happen
+  // atomically. Each change has different increasing sub revision in that
+  // set.
+  int64 sub = 2;
+}
+
 message KeyValue {
   // key is the key in bytes. An empty key is not allowed.
   bytes key = 1;
   // create_revision is the revision of last creation on this key.
-  int64 create_revision = 2;
+  Revision create_revision = 2;
   // modify_revision is the revision of last modification on this key.
-  int64 modify_revision = 3;
+  Revision modify_revision = 3;
   // version is the version of the key. A deletion resets
   // the version to zero and any modification of the key
   // increases its version.

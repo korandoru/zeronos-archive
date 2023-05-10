@@ -55,6 +55,17 @@ public class Revision implements Comparable<Revision> {
         return bytes;
     }
 
+    public static Revision of(@NotNull io.korandoru.zeronos.proto.Revision revision) {
+        return new Revision(revision.getMain(), revision.getSub());
+    }
+
+    public io.korandoru.zeronos.proto.Revision toProtos() {
+        return io.korandoru.zeronos.proto.Revision.newBuilder()
+                .setMain(this.main)
+                .setSub(this.sub)
+                .build();
+    }
+
     @Override
     public int compareTo(@NotNull Revision o) {
         return Comparator.comparing(Revision::getMain)

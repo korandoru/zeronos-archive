@@ -135,30 +135,29 @@ public class ZeroStateMachine extends BaseStateMachine {
         switch (op.getRequestCase()) {
             case REQUEST_PUT -> {
                 final PutRequest req = op.getRequestPut();
-                final long revision = entry.getIndex();
+                final Revision revision = new Revision(entry.getIndex());
                 final byte[] key = req.getKey().toByteArray();
 
-                long created = revision;
+                Revision created = revision;
                 long version = 1;
                 try {
-                    final IndexGetResult r = treeIndex.get(key, revision);
-                    created = r.getCreated().getMain();
+                    final IndexGetResult r = treeIndex.get(key, revision.getMain());
+                    created = r.getCreated();
                     version = r.getVersion() + 1;
                 } catch (ZeronosServerException.RevisionNotFound ignore) {
                     // no previous reversions - it is fine
                 }
 
-                final Revision rev = new Revision(revision);
                 final KeyValue kv = KeyValue.newBuilder()
                         .setKey(req.getKey())
                         .setValue(req.getValue())
-                        .setCreateRevision(created)
-                        .setModifyRevision(revision)
+                        .setCreateRevision(created.toProtos())
+                        .setModifyRevision(revision.toProtos())
                         .setVersion(version)
                         .build();
 
-                backend.unsafePut(Namespace.KEY, rev.toBytes(), kv.toByteArray());
-                treeIndex.put(key, rev);
+                backend.unsafePut(Namespace.KEY, revision.toBytes(), kv.toByteArray());
+                treeIndex.put(key, revision);
                 message = Message.valueOf(ResponseOp.newBuilder().setResponsePut(PutResponse.newBuilder().build()).build());
             }
             case REQUEST_DELETE_RANGE -> {
