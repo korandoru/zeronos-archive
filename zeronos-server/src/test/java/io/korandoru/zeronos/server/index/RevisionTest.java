@@ -23,17 +23,16 @@ class RevisionTest {
 
     @Test
     void testRevision() {
-        final Revision[] revisions = new Revision[]{
-                new Revision(),
-                new Revision(1),
-                new Revision(1, 1),
-                new Revision(2),
-                new Revision(Long.MAX_VALUE, Long.MAX_VALUE),
+        final Revision[] revisions = new Revision[] {
+            new Revision(),
+            new Revision(1),
+            new Revision(1, 1),
+            new Revision(2),
+            new Revision(Long.MAX_VALUE, Long.MAX_VALUE),
         };
 
         for (int i = 0; i < revisions.length - 1; i++) {
             assertThat(revisions[i]).isLessThan(revisions[i + 1]);
         }
     }
-
 }

@@ -23,5 +23,4 @@ public interface Backend {
     BackendRangeResult unsafeRange(Namespace ns, byte[] key, byte[] end, long limit);
 
     void unsafePut(Namespace ns, byte[] key, byte[] value);
-
 }

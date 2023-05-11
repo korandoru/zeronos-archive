@@ -71,5 +71,4 @@ public class Generation {
         }
         return -1;
     }
-
 }

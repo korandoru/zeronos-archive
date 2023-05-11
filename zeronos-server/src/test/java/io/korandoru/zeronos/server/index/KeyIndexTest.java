@@ -33,7 +33,9 @@ class KeyIndexTest {
         {
             final KeyIndex keyIndex1 = KeyIndex.of("foo");
             keyIndex1.setModified(new Revision(7));
-            keyIndex1.getGenerations().add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
+            keyIndex1
+                    .getGenerations()
+                    .add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
             assertThat(keyIndex0).isEqualTo(keyIndex1);
         }
 
@@ -44,8 +46,13 @@ class KeyIndexTest {
         {
             final KeyIndex keyIndex1 = KeyIndex.of("foo");
             keyIndex1.setModified(new Revision(15));
-            keyIndex1.getGenerations().add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
-            keyIndex1.getGenerations().add(new Generation(3, new Revision(8), List.of(new Revision(8), new Revision(9), new Revision(15))));
+            keyIndex1
+                    .getGenerations()
+                    .add(new Generation(2, new Revision(5), List.of(new Revision(5), new Revision(7))));
+            keyIndex1
+                    .getGenerations()
+                    .add(new Generation(
+                            3, new Revision(8), List.of(new Revision(8), new Revision(9), new Revision(15))));
             assertThat(keyIndex0).isEqualTo(keyIndex1);
         }
 
@@ -86,5 +93,4 @@ class KeyIndexTest {
         keyIndex.tombstone(new Revision(16));
         return keyIndex;
     }
-
 }

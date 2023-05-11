@@ -158,7 +158,9 @@ public class ZeroStateMachine extends BaseStateMachine {
 
                 backend.unsafePut(Namespace.KEY, revision.toBytes(), kv.toByteArray());
                 treeIndex.put(key, revision);
-                message = Message.valueOf(ResponseOp.newBuilder().setResponsePut(PutResponse.newBuilder().build()).build());
+                message = Message.valueOf(ResponseOp.newBuilder()
+                        .setResponsePut(PutResponse.newBuilder().build())
+                        .build());
             }
             case REQUEST_DELETE_RANGE -> {
                 final DeleteRangeRequest req = op.getRequestDeleteRange();
@@ -179,13 +181,16 @@ public class ZeroStateMachine extends BaseStateMachine {
                 final IndexRangeResult r = treeIndex.range(key, end, revision);
                 final Revision rev = new Revision(revision);
                 for (KeyBytes k : r.getKeys()) {
-                    final KeyValue kv = KeyValue.newBuilder()
-                            .setKey(k.toByteString())
-                            .build();
+                    final KeyValue kv =
+                            KeyValue.newBuilder().setKey(k.toByteString()).build();
                     backend.unsafePut(Namespace.KEY, rev.toBytes(true), kv.toByteArray());
                     treeIndex.tombstone(k.getKey(), rev);
                 }
-                message = Message.valueOf(ResponseOp.newBuilder().setResponseDeleteRange(DeleteRangeResponse.newBuilder().setDeleted(r.getTotal()).build()).build());
+                message = Message.valueOf(ResponseOp.newBuilder()
+                        .setResponseDeleteRange(DeleteRangeResponse.newBuilder()
+                                .setDeleted(r.getTotal())
+                                .build())
+                        .build());
             }
         }
 

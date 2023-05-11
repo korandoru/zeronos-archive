@@ -47,10 +47,8 @@ public class ZeroServer implements AutoCloseable {
     private final RaftServer server;
 
     public ZeroServer() throws IOException {
-        final RaftPeer peer = RaftPeer.newBuilder()
-                .setId("n0")
-                .setAddress("127.0.0.1:21096")
-                .build();
+        final RaftPeer peer =
+                RaftPeer.newBuilder().setId("n0").setAddress("127.0.0.1:21096").build();
         final int port = NetUtils.createSocketAddr(peer.getAddress()).getPort();
         final RaftProperties properties = new RaftProperties();
         GrpcConfigKeys.Server.setPort(properties, port);
@@ -63,7 +61,6 @@ public class ZeroServer implements AutoCloseable {
                 .setStateMachine(new ZeroStateMachine())
                 .build();
     }
-
 
     public ZeroServer start() throws IOException {
         this.server.start();
@@ -82,7 +79,8 @@ public class ZeroServer implements AutoCloseable {
                     .setAddress("127.0.0.1:21096")
                     .build();
             final RaftProperties properties = new RaftProperties();
-            final GrpcClientRpc rpc = new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), properties);
+            final GrpcClientRpc rpc =
+                    new GrpcFactory(new Parameters()).newRaftClientRpc(ClientId.randomId(), properties);
             final RaftGroupId groupId = RaftGroupId.valueOf(new UUID(0, 1));
             final RaftGroup group = RaftGroup.valueOf(groupId, peer);
             final RaftClient client = RaftClient.newBuilder()
@@ -91,24 +89,30 @@ public class ZeroServer implements AutoCloseable {
                     .setClientRpc(rpc)
                     .build();
             try (client) {
-                var resp = client.io().send(Message.valueOf(
-                        RequestOp.newBuilder().setRequestPut(PutRequest.newBuilder()
-                        .setKey(ByteString.copyFromUtf8("foo"))
-                        .setValue(ByteString.copyFromUtf8("bar"))
-                        .build()).build()));
+                var resp = client.io()
+                        .send(Message.valueOf(RequestOp.newBuilder()
+                                .setRequestPut(PutRequest.newBuilder()
+                                        .setKey(ByteString.copyFromUtf8("foo"))
+                                        .setValue(ByteString.copyFromUtf8("bar"))
+                                        .build())
+                                .build()));
                 System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
-                resp = client.io().sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
-                        .setKey(ByteString.copyFromUtf8("foo"))
-                        .build()));
-                System.out.println(RangeResponse.parseFrom(resp.getMessage().getContent()));
-                resp = client.io().send(Message.valueOf(
-                        RequestOp.newBuilder().setRequestDeleteRange(DeleteRangeRequest.newBuilder()
+                resp = client.io()
+                        .sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
                                 .setKey(ByteString.copyFromUtf8("foo"))
-                                .build()).build()));
+                                .build()));
+                System.out.println(RangeResponse.parseFrom(resp.getMessage().getContent()));
+                resp = client.io()
+                        .send(Message.valueOf(RequestOp.newBuilder()
+                                .setRequestDeleteRange(DeleteRangeRequest.newBuilder()
+                                        .setKey(ByteString.copyFromUtf8("foo"))
+                                        .build())
+                                .build()));
                 System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
-                resp = client.io().sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
-                        .setKey(ByteString.copyFromUtf8("foo"))
-                        .build()));
+                resp = client.io()
+                        .sendReadOnly(Message.valueOf(RangeRequest.newBuilder()
+                                .setKey(ByteString.copyFromUtf8("foo"))
+                                .build()));
                 System.out.println(RangeResponse.parseFrom(resp.getMessage().getContent()));
             }
         }

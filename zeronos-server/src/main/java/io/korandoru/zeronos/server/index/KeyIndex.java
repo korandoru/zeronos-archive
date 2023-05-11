@@ -84,9 +84,7 @@ public class KeyIndex {
     public IndexGetResult get(long revision) {
         if (generations.isEmpty()) {
             final ZeronosServerException e = new ZeronosServerException.FatalError();
-            log.atError()
-                    .addKeyValue("key", new String(key))
-                    .log("'get' got an unexpected empty keyIndex", e);
+            log.atError().addKeyValue("key", new String(key)).log("'get' got an unexpected empty keyIndex", e);
             throw e;
         }
 
@@ -127,9 +125,7 @@ public class KeyIndex {
     public void tombstone(Revision revision) {
         if (generations.isEmpty()) {
             final ZeronosServerException e = new ZeronosServerException.FatalError();
-            log.atError()
-                    .addKeyValue("key", new String(key))
-                    .log("'tombstone' got an unexpected empty keyIndex", e);
+            log.atError().addKeyValue("key", new String(key)).log("'tombstone' got an unexpected empty keyIndex", e);
             throw e;
         }
 

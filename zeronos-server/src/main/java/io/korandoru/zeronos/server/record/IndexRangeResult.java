@@ -27,5 +27,4 @@ public class IndexRangeResult {
     private final List<Revision> revisions;
     private final List<KeyBytes> keys;
     private final long total;
-
 }

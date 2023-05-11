@@ -79,9 +79,7 @@ public class RocksDBBackend implements Backend, AutoCloseable {
         try {
             db.put(bytes, value);
         } catch (RocksDBException e) {
-            log.atError()
-                    .addKeyValue("namespace", ns)
-                    .log("failed to write to the backend", e);
+            log.atError().addKeyValue("namespace", ns).log("failed to write to the backend", e);
             throw new UncheckedIOException(new IOException(e));
         }
     }

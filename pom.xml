@@ -83,6 +83,9 @@
                         </format>
                     </formats>
                     <java>
+                        <palantirJavaFormat>
+                            <version>2.30.0</version>
+                        </palantirJavaFormat>
                         <!-- static imports first, then others, no blank lines  -->
                         <importOrder>
                             <order>\#|</order>

@@ -25,5 +25,4 @@ public class IndexGetResult {
     private final Revision modified;
     private final Revision created;
     private final long version;
-
 }

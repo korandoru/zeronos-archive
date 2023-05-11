@@ -66,42 +66,48 @@ class TreeIndexTest {
                         revision,
                         limit,
                         Arrays.stream(revisions).toList(),
-                        count
-                );
+                        count);
             }
         }
 
-        final TestCase[] tests = new TestCase[]{
-                // single key that not found
-                new TestCase("bar", null, 6, 0, 0),
-                // single key that found
-                new TestCase("foo", null, 6, 0, 1, new Revision(6)),
-                // various range keys, fixed atRev, unlimited
-                new TestCase("foo", "foo1", 6, 0, 1, new Revision(6)),
-                new TestCase("foo", "foo2", 6, 0, 2, new Revision(6), new Revision(5)),
-                new TestCase("foo", "fop", 6, 0, 3, new Revision(6), new Revision(5), new Revision(4)),
-                new TestCase("foo1", "fop", 6, 0, 2, new Revision(5), new Revision(4)),
-                new TestCase("foo2", "fop", 6, 0, 1, new Revision(4)),
-                new TestCase("foo3", "fop", 6, 0, 0),
-                // fixed range keys, various atRev, unlimited
-                new TestCase("foo1", "fop", 1, 0, 0),
-                new TestCase("foo1", "fop", 2, 1, 1, new Revision(2)),
-                new TestCase("foo1", "fop", 3, 2, 2, new Revision(2), new Revision(3)),
-                new TestCase("foo1", "fop", 4, 2, 2, new Revision(2), new Revision(4)),
-                new TestCase("foo1", "fop", 5, 2, 2, new Revision(5), new Revision(4)),
-                new TestCase("foo1", "fop", 6, 2, 2, new Revision(5), new Revision(4)),
-                // fixed range keys, fixed atRev, various limit
-                new TestCase("foo", "fop", 6, 1, 3, new Revision(6)),
-                new TestCase("foo", "fop", 6, 2, 3, new Revision(6), new Revision(5)),
-                new TestCase("foo", "fop", 6, 3, 3, new Revision(6), new Revision(5), new Revision(4)),
-                new TestCase("foo", "fop", 3, 1, 3, new Revision(1)),
-                new TestCase("foo", "fop", 3, 2, 3, new Revision(1), new Revision(2)),
-                new TestCase("foo", "fop", 3, 3, 3, new Revision(1), new Revision(2), new Revision(3)),
+        final TestCase[] tests = new TestCase[] {
+            // single key that not found
+            new TestCase("bar", null, 6, 0, 0),
+            // single key that found
+            new TestCase("foo", null, 6, 0, 1, new Revision(6)),
+            // various range keys, fixed atRev, unlimited
+            new TestCase("foo", "foo1", 6, 0, 1, new Revision(6)),
+            new TestCase("foo", "foo2", 6, 0, 2, new Revision(6), new Revision(5)),
+            new TestCase("foo", "fop", 6, 0, 3, new Revision(6), new Revision(5), new Revision(4)),
+            new TestCase("foo1", "fop", 6, 0, 2, new Revision(5), new Revision(4)),
+            new TestCase("foo2", "fop", 6, 0, 1, new Revision(4)),
+            new TestCase("foo3", "fop", 6, 0, 0),
+            // fixed range keys, various atRev, unlimited
+            new TestCase("foo1", "fop", 1, 0, 0),
+            new TestCase("foo1", "fop", 2, 1, 1, new Revision(2)),
+            new TestCase("foo1", "fop", 3, 2, 2, new Revision(2), new Revision(3)),
+            new TestCase("foo1", "fop", 4, 2, 2, new Revision(2), new Revision(4)),
+            new TestCase("foo1", "fop", 5, 2, 2, new Revision(5), new Revision(4)),
+            new TestCase("foo1", "fop", 6, 2, 2, new Revision(5), new Revision(4)),
+            // fixed range keys, fixed atRev, various limit
+            new TestCase("foo", "fop", 6, 1, 3, new Revision(6)),
+            new TestCase("foo", "fop", 6, 2, 3, new Revision(6), new Revision(5)),
+            new TestCase("foo", "fop", 6, 3, 3, new Revision(6), new Revision(5), new Revision(4)),
+            new TestCase("foo", "fop", 3, 1, 3, new Revision(1)),
+            new TestCase("foo", "fop", 3, 2, 3, new Revision(1), new Revision(2)),
+            new TestCase("foo", "fop", 3, 3, 3, new Revision(1), new Revision(2), new Revision(3)),
         };
         for (TestCase test : tests) {
-            assertThat(treeIndex.range(test.key, test.end, test.revision).getTotal()).isEqualTo(test.count);
-            assertThat(treeIndex.range(test.key, test.end, test.revision, test.limit).getTotal()).isEqualTo(test.count);
-            assertThat(treeIndex.range(test.key, test.end, test.revision, test.limit).getRevisions()).isEqualTo(test.revisions);
+            assertThat(treeIndex.range(test.key, test.end, test.revision).getTotal())
+                    .isEqualTo(test.count);
+            assertThat(treeIndex
+                            .range(test.key, test.end, test.revision, test.limit)
+                            .getTotal())
+                    .isEqualTo(test.count);
+            assertThat(treeIndex
+                            .range(test.key, test.end, test.revision, test.limit)
+                            .getRevisions())
+                    .isEqualTo(test.revisions);
         }
     }
 
@@ -112,7 +118,8 @@ class TreeIndexTest {
         treeIndex.put(key.getKey(), new Revision(1));
         treeIndex.tombstone(key.getKey(), new Revision(2));
         assertThrows(ZeronosServerException.RevisionNotFound.class, () -> treeIndex.get(key.getKey(), 2));
-        assertThrows(ZeronosServerException.RevisionNotFound.class, () -> treeIndex.tombstone(key.getKey(), new Revision(3)));
+        assertThrows(
+                ZeronosServerException.RevisionNotFound.class,
+                () -> treeIndex.tombstone(key.getKey(), new Revision(3)));
     }
-
 }
