@@ -26,6 +26,8 @@ import io.korandoru.zeronos.proto.RangeRequest;
 import io.korandoru.zeronos.proto.RangeResponse;
 import io.korandoru.zeronos.proto.RequestOp;
 import io.korandoru.zeronos.proto.ResponseOp;
+import io.korandoru.zeronos.proto.TxnRequest;
+import io.korandoru.zeronos.proto.TxnResponse;
 import io.korandoru.zeronos.server.exception.ZeronosServerException;
 import io.korandoru.zeronos.server.index.Revision;
 import io.korandoru.zeronos.server.index.TreeIndex;
@@ -37,6 +39,8 @@ import io.korandoru.zeronos.server.storage.Namespace;
 import io.korandoru.zeronos.server.storage.RocksDBBackend;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.io.FileUtils;
 import org.apache.ratis.proto.RaftProtos;
@@ -72,52 +76,68 @@ public class ZeroStateMachine extends BaseStateMachine {
 
     @Override
     public CompletableFuture<Message> query(Message request) {
-        final RangeRequest.Builder req = RangeRequest.newBuilder();
+        final List<RequestOp> requestList;
         try {
+            final TxnRequest.Builder req = TxnRequest.newBuilder();
             req.mergeFrom(request.getContent());
+            requestList = req.getSuccessList();
         } catch (InvalidProtocolBufferException e) {
             return CompletableFuture.failedFuture(e);
         }
 
-        // decode >= key range
-        final byte[] end;
-        if (req.getRangeEnd().isEmpty()) {
-            end = null;
-        } else {
-            if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
-                end = new byte[0];
+        for (RequestOp requestOp : requestList) {
+            if (requestOp.getRequestRange() == null) {
+                final String message = "readonly message contains mutations";
+                return CompletableFuture.failedFuture(new IllegalArgumentException(message));
+            }
+        }
+
+        final List<ResponseOp> responseOps = new ArrayList<>();
+        for (RequestOp requestOp : requestList) {
+            final RangeRequest req = requestOp.getRequestRange();
+            // decode >= key range
+            final byte[] end;
+            if (req.getRangeEnd().isEmpty()) {
+                end = null;
             } else {
-                end = req.getRangeEnd().toByteArray();
+                if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
+                    end = new byte[0];
+                } else {
+                    end = req.getRangeEnd().toByteArray();
+                }
             }
-        }
 
-        final TermIndex termIndex = getLastAppliedTermIndex();
-        final IndexRangeResult r = treeIndex.range(
-                req.getKey().toByteArray(),
-                end,
-                req.getRevision() > 0 ? req.getRevision() : termIndex.getIndex(),
-                req.getLimit());
+            final TermIndex termIndex = getLastAppliedTermIndex();
+            final IndexRangeResult r = treeIndex.range(
+                    req.getKey().toByteArray(),
+                    end,
+                    req.getRevision() > 0 ? req.getRevision() : termIndex.getIndex(),
+                    req.getLimit());
 
-        final long bound;
-        if (req.getLimit() <= 0 || req.getLimit() > r.getRevisions().size()) {
-            bound = r.getRevisions().size();
-        } else {
-            bound = req.getLimit();
-        }
-
-        final RangeResponse.Builder resp = RangeResponse.newBuilder();
-        for (int i = 0; i < bound; i++) {
-            final byte[] key = r.getRevisions().get(i).toBytes();
-            final BackendRangeResult rr = backend.unsafeRange(Namespace.KEY, key, null, 0);
-            assert rr.getValues().size() == 1;
-            try {
-                resp.addKvs(KeyValue.parseFrom(rr.getValues().get(0)));
-            } catch (InvalidProtocolBufferException e) {
-                return CompletableFuture.failedFuture(e);
+            final long bound;
+            if (req.getLimit() <= 0 || req.getLimit() > r.getRevisions().size()) {
+                bound = r.getRevisions().size();
+            } else {
+                bound = req.getLimit();
             }
+
+            final RangeResponse.Builder resp = RangeResponse.newBuilder();
+            for (int i = 0; i < bound; i++) {
+                final byte[] key = r.getRevisions().get(i).toBytes();
+                final BackendRangeResult rr = backend.unsafeRange(Namespace.KEY, key, null, 0);
+                assert rr.getValues().size() == 1;
+                try {
+                    resp.addKvs(KeyValue.parseFrom(rr.getValues().get(0)));
+                } catch (InvalidProtocolBufferException e) {
+                    return CompletableFuture.failedFuture(e);
+                }
+            }
+
+            responseOps.add(ResponseOp.newBuilder().setResponseRange(resp).build());
         }
 
-        return CompletableFuture.completedFuture(Message.valueOf(resp.build()));
+        return CompletableFuture.completedFuture(Message.valueOf(
+                TxnResponse.newBuilder().addAllResponses(responseOps).build()));
     }
 
     @Override
