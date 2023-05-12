@@ -16,9 +16,7 @@
 
 package io.korandoru.zeronos.server.storage;
 
-public interface Backend {
+public interface WriteTxn extends ReadTxn {
 
-    ReadTxn readTxn();
-
-    WriteTxn writeTxn();
+    void unsafePut(Namespace ns, byte[] key, byte[] value);
 }

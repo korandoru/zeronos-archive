@@ -16,19 +16,12 @@
 
 package io.korandoru.zeronos.server.storage;
 
-import io.korandoru.zeronos.server.record.BackendRangeResult;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
 
 @Slf4j
 public class RocksDBBackend implements Backend, AutoCloseable {
@@ -44,44 +37,13 @@ public class RocksDBBackend implements Backend, AutoCloseable {
     }
 
     @Override
-    public BackendRangeResult unsafeRange(Namespace ns, byte[] key, byte[] end, long limit) {
-        final long bound;
-        final Predicate<byte[]> isMatch;
-        if (end == null) {
-            bound = 1;
-            isMatch = bytes -> Arrays.equals(bytes, key);
-        } else {
-            bound = limit > 0 ? limit : Long.MAX_VALUE;
-            isMatch = bytes -> Arrays.compare(bytes, end) < 0;
-        }
-
-        final List<byte[]> keys = new ArrayList<>();
-        final List<byte[]> values = new ArrayList<>();
-        final RocksIterator it = db.newIterator();
-        final byte[] fixedKey = ns.fixKey(key);
-        for (it.seek(fixedKey); it.isValid(); it.next()) {
-            final byte[] bytes = ns.unfixKey(it.key());
-            if (!isMatch.test(bytes)) {
-                break;
-            }
-            keys.add(bytes);
-            values.add(it.value());
-            if (keys.size() >= bound) {
-                break;
-            }
-        }
-        return new BackendRangeResult(keys, values);
+    public ReadTxn readTxn() {
+        return new RocksDBRWBatch(db);
     }
 
     @Override
-    public void unsafePut(Namespace ns, byte[] key, byte[] value) {
-        final byte[] bytes = ns.fixKey(key);
-        try {
-            db.put(bytes, value);
-        } catch (RocksDBException e) {
-            log.atError().addKeyValue("namespace", ns).log("failed to write to the backend", e);
-            throw new UncheckedIOException(new IOException(e));
-        }
+    public WriteTxn writeTxn() {
+        return new RocksDBRWBatch(db);
     }
 
     @Override

@@ -16,9 +16,9 @@
 
 package io.korandoru.zeronos.server.storage;
 
-public interface Backend {
+import io.korandoru.zeronos.server.record.BackendRangeResult;
 
-    ReadTxn readTxn();
+public interface ReadTxn extends AutoCloseable {
 
-    WriteTxn writeTxn();
+    BackendRangeResult unsafeRange(Namespace ns, byte[] key, byte[] end, long limit);
 }
