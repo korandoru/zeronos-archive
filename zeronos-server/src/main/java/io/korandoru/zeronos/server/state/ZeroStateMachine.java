@@ -86,8 +86,8 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         for (RequestOp requestOp : requestList) {
-            if (requestOp.getRequestRange() == null) {
-                final String message = "readonly message contains mutations";
+            if (!requestOp.hasRequestRange()) {
+                final String message = "readonly message contains mutations: " + requestOp.getRequestCase();
                 return CompletableFuture.failedFuture(new IllegalArgumentException(message));
             }
         }
