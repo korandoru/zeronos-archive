@@ -53,6 +53,7 @@ import org.apache.ratis.server.protocol.TermIndex;
 import org.apache.ratis.server.storage.RaftStorage;
 import org.apache.ratis.statemachine.TransactionContext;
 import org.apache.ratis.statemachine.impl.BaseStateMachine;
+import org.apache.ratis.thirdparty.com.google.protobuf.ByteString;
 import org.apache.ratis.thirdparty.com.google.protobuf.InvalidProtocolBufferException;
 
 public class ZeroStateMachine extends BaseStateMachine {
@@ -76,6 +77,19 @@ public class ZeroStateMachine extends BaseStateMachine {
         backend = new RocksDBBackend(dataDir);
     }
 
+    // >= is encoded in the range end as '\0' because null and new byte[0] is the same via gRPC.
+    // If it is a GTE range, then KeyBytes.infinity() is returned to indicate the empty byte
+    // string (vs null being no byte string).
+    private static byte[] decodeGteRange(ByteString rangeEnd) {
+        if (rangeEnd.isEmpty()) {
+            return null;
+        }
+        if (rangeEnd.size() == 1 && rangeEnd.byteAt(0) == 0) {
+            return KeyBytes.infinity();
+        }
+        return rangeEnd.toByteArray();
+    }
+
     @Override
     public CompletableFuture<Message> query(Message request) {
         final List<RequestOp> requestList;
@@ -97,17 +111,7 @@ public class ZeroStateMachine extends BaseStateMachine {
         final List<ResponseOp> responseOps = new ArrayList<>();
         for (RequestOp requestOp : requestList) {
             final RangeRequest req = requestOp.getRequestRange();
-            // decode >= key range
-            final byte[] end;
-            if (req.getRangeEnd().isEmpty()) {
-                end = null;
-            } else {
-                if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
-                    end = new byte[0];
-                } else {
-                    end = req.getRangeEnd().toByteArray();
-                }
-            }
+            final byte[] end = decodeGteRange(req.getRangeEnd());
 
             final TermIndex termIndex = getLastAppliedTermIndex();
             final IndexRangeResult r = treeIndex.range(
@@ -189,17 +193,7 @@ public class ZeroStateMachine extends BaseStateMachine {
                     final DeleteRangeRequest req = op.getRequestDeleteRange();
                     final long revision = entry.getIndex();
                     final byte[] key = req.getKey().toByteArray();
-                    // decode >= key range
-                    final byte[] end;
-                    if (req.getRangeEnd().isEmpty()) {
-                        end = null;
-                    } else {
-                        if (req.getRangeEnd().size() == 1 && req.getRangeEnd().byteAt(0) == 0) {
-                            end = new byte[0];
-                        } else {
-                            end = req.getRangeEnd().toByteArray();
-                        }
-                    }
+                    final byte[] end = decodeGteRange(req.getRangeEnd());
 
                     final IndexRangeResult r = treeIndex.range(key, end, revision);
                     final Revision rev = new Revision(revision);

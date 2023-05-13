@@ -26,6 +26,12 @@ import org.jetbrains.annotations.NotNull;
 @Data
 public class KeyBytes implements Comparable<KeyBytes> {
 
+    private static final byte[] INFINITY = new byte[0];
+
+    public static byte[] infinity() {
+        return INFINITY;
+    }
+
     private final byte[] key;
 
     public KeyBytes(String key) {
@@ -42,7 +48,7 @@ public class KeyBytes implements Comparable<KeyBytes> {
     }
 
     public boolean isInfinite() {
-        return Arrays.equals(this.key, new byte[0]);
+        return Arrays.equals(this.key, INFINITY);
     }
 
     @Override
