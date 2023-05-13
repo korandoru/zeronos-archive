@@ -20,7 +20,6 @@ import io.korandoru.zeronos.proto.DeleteRangeRequest;
 import io.korandoru.zeronos.proto.PutRequest;
 import io.korandoru.zeronos.proto.RangeRequest;
 import io.korandoru.zeronos.proto.RequestOp;
-import io.korandoru.zeronos.proto.ResponseOp;
 import io.korandoru.zeronos.proto.TxnRequest;
 import io.korandoru.zeronos.proto.TxnResponse;
 import io.korandoru.zeronos.server.state.ZeroStateMachine;
@@ -91,31 +90,43 @@ public class ZeroServer implements AutoCloseable {
                     .build();
             try (client) {
                 var resp = client.io()
-                        .send(Message.valueOf(RequestOp.newBuilder()
-                                .setRequestPut(PutRequest.newBuilder()
-                                        .setKey(ByteString.copyFromUtf8("foo"))
-                                        .setValue(ByteString.copyFromUtf8("bar"))
-                                        .build())
-                                .build()));
-                System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
-
-                resp = client.io()
-                        .sendReadOnly(Message.valueOf(TxnRequest.newBuilder()
+                        .send(Message.valueOf(TxnRequest.newBuilder()
                                 .addSuccess(RequestOp.newBuilder()
-                                        .setRequestRange(RangeRequest.newBuilder()
+                                        .setRequestPut(PutRequest.newBuilder()
                                                 .setKey(ByteString.copyFromUtf8("foo"))
+                                                .setValue(ByteString.copyFromUtf8("bar"))
+                                                .build())
+                                        .build())
+                                .addSuccess(RequestOp.newBuilder()
+                                        .setRequestPut(PutRequest.newBuilder()
+                                                .setKey(ByteString.copyFromUtf8("foz"))
+                                                .setValue(ByteString.copyFromUtf8("baz"))
                                                 .build())
                                         .build())
                                 .build()));
                 System.out.println(TxnResponse.parseFrom(resp.getMessage().getContent()));
 
                 resp = client.io()
-                        .send(Message.valueOf(RequestOp.newBuilder()
-                                .setRequestDeleteRange(DeleteRangeRequest.newBuilder()
-                                        .setKey(ByteString.copyFromUtf8("foo"))
+                        .sendReadOnly(Message.valueOf(TxnRequest.newBuilder()
+                                .addSuccess(RequestOp.newBuilder()
+                                        .setRequestRange(RangeRequest.newBuilder()
+                                                .setKey(ByteString.copyFromUtf8("foo"))
+                                                .setRangeEnd(ByteString.copyFrom(new byte[] {0}))
+                                                .build())
                                         .build())
                                 .build()));
-                System.out.println(ResponseOp.parseFrom(resp.getMessage().getContent()));
+                System.out.println(TxnResponse.parseFrom(resp.getMessage().getContent()));
+
+                resp = client.io()
+                        .send(Message.valueOf(TxnRequest.newBuilder()
+                                .addSuccess(RequestOp.newBuilder()
+                                        .setRequestDeleteRange(DeleteRangeRequest.newBuilder()
+                                                .setKey(ByteString.copyFromUtf8("foo"))
+                                                .setRangeEnd(ByteString.copyFrom(new byte[] {0}))
+                                                .build())
+                                        .build())
+                                .build()));
+                System.out.println(TxnResponse.parseFrom(resp.getMessage().getContent()));
 
                 resp = client.io()
                         .sendReadOnly(Message.valueOf(TxnRequest.newBuilder()
