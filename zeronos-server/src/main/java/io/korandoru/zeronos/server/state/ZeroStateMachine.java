@@ -91,6 +91,71 @@ public class ZeroStateMachine extends BaseStateMachine {
         return rangeEnd.toByteArray();
     }
 
+    private RangeResponse range(ReadTxn readTxn, RangeRequest req, long revision)
+            throws InvalidProtocolBufferException {
+        final byte[] key = req.getKey().toByteArray();
+        final byte[] end = decodeGteRange(req.getRangeEnd());
+        final long limit = req.getLimit();
+
+        final IndexRangeResult r = treeIndex.range(key, end, revision, limit);
+        final long bound;
+        if (limit <= 0 || limit > r.getRevisions().size()) {
+            bound = r.getRevisions().size();
+        } else {
+            bound = limit;
+        }
+
+        final RangeResponse.Builder resp = RangeResponse.newBuilder();
+        for (int i = 0; i < bound; i++) {
+            final byte[] k = r.getRevisions().get(i).toBytes();
+            final BackendRangeResult rr = readTxn.unsafeRange(Namespace.KEY, k, null, 0);
+            assert rr.getValues().size() == 1;
+            resp.addKvs(KeyValue.parseFrom(rr.getValues().get(0)));
+        }
+
+        return resp.build();
+    }
+
+    private PutResponse put(WriteTxn writeTxn, PutRequest req, Revision revision) {
+        final byte[] key = req.getKey().toByteArray();
+
+        Revision created = revision;
+        long version = 1;
+        try {
+            final IndexGetResult r = treeIndex.get(key, revision.getMain());
+            created = r.getCreated();
+            version = r.getVersion() + 1;
+        } catch (ZeronosServerException.RevisionNotFound ignore) {
+            // no previous reversions - it is fine
+        }
+
+        final KeyValue kv = KeyValue.newBuilder()
+                .setKey(req.getKey())
+                .setValue(req.getValue())
+                .setCreateRevision(created.toProtos())
+                .setModifyRevision(revision.toProtos())
+                .setVersion(version)
+                .build();
+
+        writeTxn.unsafePut(Namespace.KEY, revision.toBytes(), kv.toByteArray());
+        treeIndex.put(key, revision);
+        return PutResponse.newBuilder().build();
+    }
+
+    private DeleteRangeResponse deleteRange(WriteTxn writeTxn, DeleteRangeRequest req, Revision revision) {
+        final byte[] key = req.getKey().toByteArray();
+        final byte[] end = decodeGteRange(req.getRangeEnd());
+
+        final IndexRangeResult r = treeIndex.range(key, end, revision.getMain());
+        for (KeyBytes k : r.getKeys()) {
+            final KeyValue kv = KeyValue.newBuilder().setKey(k.toByteString()).build();
+            writeTxn.unsafePut(Namespace.KEY, revision.toBytes(true), kv.toByteArray());
+            treeIndex.tombstone(k.getKey(), revision);
+        }
+
+        return DeleteRangeResponse.newBuilder().setDeleted(r.getTotal()).build();
+    }
+
     @Override
     public CompletableFuture<Message> query(Message request) {
         final List<RequestOp> requestList;
@@ -110,41 +175,22 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         final List<ResponseOp> responseOps = new ArrayList<>();
-        for (RequestOp requestOp : requestList) {
-            final RangeRequest req = requestOp.getRequestRange();
-            final byte[] end = decodeGteRange(req.getRangeEnd());
+        final TermIndex termIndex = getLastAppliedTermIndex();
 
-            final TermIndex termIndex = getLastAppliedTermIndex();
-            final IndexRangeResult r = treeIndex.range(
-                    req.getKey().toByteArray(),
-                    end,
-                    req.getRevision() > 0 ? req.getRevision() : termIndex.getIndex(),
-                    req.getLimit());
-
-            final long bound;
-            if (req.getLimit() <= 0 || req.getLimit() > r.getRevisions().size()) {
-                bound = r.getRevisions().size();
-            } else {
-                bound = req.getLimit();
+        try (final ReadTxn readTxn = backend.readTxn()) {
+            for (RequestOp requestOp : requestList) {
+                final RangeRequest req = requestOp.getRequestRange();
+                final long revision = req.getRevision() > 0 ? req.getRevision() : termIndex.getIndex();
+                final RangeResponse resp = range(readTxn, req, revision);
+                responseOps.add(ResponseOp.newBuilder().setResponseRange(resp).build());
             }
-
-            final RangeResponse.Builder resp = RangeResponse.newBuilder();
-            try (final ReadTxn readTxn = backend.readTxn()) {
-                for (int i = 0; i < bound; i++) {
-                    final byte[] key = r.getRevisions().get(i).toBytes();
-                    final BackendRangeResult rr = readTxn.unsafeRange(Namespace.KEY, key, null, 0);
-                    assert rr.getValues().size() == 1;
-                    resp.addKvs(KeyValue.parseFrom(rr.getValues().get(0)));
-                }
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
-
-            responseOps.add(ResponseOp.newBuilder().setResponseRange(resp).build());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
 
-        return CompletableFuture.completedFuture(Message.valueOf(
-                TxnResponse.newBuilder().addAllResponses(responseOps).build()));
+        final TxnResponse resp =
+                TxnResponse.newBuilder().addAllResponses(responseOps).build();
+        return CompletableFuture.completedFuture(Message.valueOf(resp));
     }
 
     @Override
@@ -161,74 +207,48 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         final List<ResponseOp> responseOps = new ArrayList<>();
+        final AtomicLong sub = new AtomicLong();
         try (final WriteTxn writeTxn = backend.writeTxn()) {
-            final AtomicLong sub = new AtomicLong();
             for (RequestOp op : requestList) {
-                ResponseOp responseOp = null;
+                final ResponseOp responseOp;
                 switch (op.getRequestCase()) {
                     case REQUEST_PUT -> {
                         final PutRequest req = op.getRequestPut();
                         final Revision revision = new Revision(entry.getIndex(), sub.getAndIncrement());
-                        final byte[] key = req.getKey().toByteArray();
-
-                        Revision created = revision;
-                        long version = 1;
-                        try {
-                            final IndexGetResult r = treeIndex.get(key, revision.getMain());
-                            created = r.getCreated();
-                            version = r.getVersion() + 1;
-                        } catch (ZeronosServerException.RevisionNotFound ignore) {
-                            // no previous reversions - it is fine
-                        }
-
-                        final KeyValue kv = KeyValue.newBuilder()
-                                .setKey(req.getKey())
-                                .setValue(req.getValue())
-                                .setCreateRevision(created.toProtos())
-                                .setModifyRevision(revision.toProtos())
-                                .setVersion(version)
-                                .build();
-
-                        writeTxn.unsafePut(Namespace.KEY, revision.toBytes(), kv.toByteArray());
-                        treeIndex.put(key, revision);
-                        responseOp = ResponseOp.newBuilder()
-                                .setResponsePut(PutResponse.newBuilder().build())
-                                .build();
+                        final PutResponse resp = put(writeTxn, req, revision);
+                        responseOp =
+                                ResponseOp.newBuilder().setResponsePut(resp).build();
                     }
                     case REQUEST_DELETE_RANGE -> {
                         final DeleteRangeRequest req = op.getRequestDeleteRange();
-                        final long revision = entry.getIndex();
-                        final byte[] key = req.getKey().toByteArray();
-                        final byte[] end = decodeGteRange(req.getRangeEnd());
-
-                        final IndexRangeResult r = treeIndex.range(key, end, revision);
-                        final Revision rev = new Revision(revision, sub.getAndIncrement());
-                        for (KeyBytes k : r.getKeys()) {
-                            final KeyValue kv = KeyValue.newBuilder()
-                                    .setKey(k.toByteString())
-                                    .build();
-                            writeTxn.unsafePut(Namespace.KEY, rev.toBytes(true), kv.toByteArray());
-                            treeIndex.tombstone(k.getKey(), rev);
-                        }
+                        final Revision revision = new Revision(entry.getIndex(), sub.getAndIncrement());
+                        final DeleteRangeResponse resp = deleteRange(writeTxn, req, revision);
                         responseOp = ResponseOp.newBuilder()
-                                .setResponseDeleteRange(DeleteRangeResponse.newBuilder()
-                                        .setDeleted(r.getTotal())
-                                        .build())
+                                .setResponseDeleteRange(resp)
                                 .build();
                     }
+                    case REQUEST_RANGE -> {
+                        final RangeRequest req = op.getRequestRange();
+                        final long revision = req.getRevision() > 0 ? req.getRevision() : entry.getIndex();
+                        final RangeResponse resp = range(writeTxn, req, revision);
+                        responseOp =
+                                ResponseOp.newBuilder().setResponseRange(resp).build();
+                    }
+                    default -> {
+                        final Throwable t = new UnsupportedOperationException(
+                                op.getRequestCase().name());
+                        return CompletableFuture.failedFuture(t);
+                    }
                 }
-
-                if (responseOp != null) {
-                    responseOps.add(responseOp);
-                } else {
-                    return CompletableFuture.failedFuture(new NullPointerException("message is not initialized"));
-                }
+                responseOps.add(responseOp);
             }
-            updateLastAppliedTermIndex(entry.getTerm(), entry.getIndex());
-            return CompletableFuture.completedFuture(Message.valueOf(
-                    TxnResponse.newBuilder().addAllResponses(responseOps).build()));
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
+
+        updateLastAppliedTermIndex(entry.getTerm(), entry.getIndex());
+        final TxnResponse resp =
+                TxnResponse.newBuilder().addAllResponses(responseOps).build();
+        return CompletableFuture.completedFuture(Message.valueOf(resp));
     }
 }
