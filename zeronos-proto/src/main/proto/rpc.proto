@@ -77,8 +77,40 @@ message ResponseOp {
   }
 }
 
+message Compare {
+  enum CompareResult {
+    EQUAL = 0;
+    GREATER = 1;
+    LESS = 2;
+    NOT_EQUAL = 3;
+    GREATER_OR_EQUAL = 4;
+    LESS_OR_EQUAL = 5;
+  }
+
+  enum CompareTarget {
+    VERSION = 0;
+    VALUE = 1;
+  }
+
+  // result is logical comparison operation for this comparison.
+  CompareResult result = 1;
+  // target is the key-value field to inspect for the comparison.
+  CompareTarget target = 2;
+  // key is the subject key for the comparison operation.
+  bytes key = 3;
+
+  oneof target_union {
+    // version is the version of the given key
+    int64 version = 4;
+    // value is the value of the given key, in bytes.
+    bytes value = 5;
+  }
+}
+
 message TxnRequest {
+  repeated Compare compare = 1;
   repeated RequestOp success = 2;
+  repeated RequestOp failure = 3;
 }
 
 message TxnResponse {

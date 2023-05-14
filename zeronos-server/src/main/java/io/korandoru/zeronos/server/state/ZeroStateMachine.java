@@ -16,6 +16,7 @@
 
 package io.korandoru.zeronos.server.state;
 
+import io.korandoru.zeronos.proto.Compare;
 import io.korandoru.zeronos.proto.DeleteRangeRequest;
 import io.korandoru.zeronos.proto.DeleteRangeResponse;
 import io.korandoru.zeronos.proto.KeyBytes;
@@ -42,6 +43,7 @@ import io.korandoru.zeronos.server.storage.WriteTxn;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -154,6 +156,51 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         return DeleteRangeResponse.newBuilder().setDeleted(r.getTotal()).build();
+    }
+
+    private boolean applyCompares(ReadTxn readTxn, List<Compare> compareList, long revision)
+            throws InvalidProtocolBufferException {
+        for (Compare compare : compareList) {
+            final RangeRequest req = RangeRequest.newBuilder().setKey(compare.getKey()).build();
+            final RangeResponse resp = range(readTxn, req, revision);
+            if (!applyCompare(compare, resp.getKvsList())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean applyCompare(Compare compare, List<KeyValue> kvs) {
+        if (kvs.isEmpty()) {
+            // always fail if comparing a value on a key/keys that doesn't exist;
+            // null == empty string in gRPC; no way to represent missing value
+            return false;
+        }
+
+        final Comparator<ByteString> comparator = ByteString.unsignedLexicographicalComparator();
+        for (KeyValue kv : kvs) {
+            final int result = switch (compare.getTarget()) {
+                case VERSION -> Long.compare(kv.getVersion(), compare.getVersion());
+                case VALUE -> comparator.compare(kv.getValue(), compare.getValue());
+                default -> throw new UnsupportedOperationException(compare.getTarget().name());
+            };
+
+            final boolean match = switch (compare.getResult()) {
+                case EQUAL -> result == 0;
+                case GREATER -> result > 0;
+                case LESS -> result < 0;
+                case NOT_EQUAL -> result != 0;
+                case GREATER_OR_EQUAL -> result >= 0;
+                case LESS_OR_EQUAL -> result <= 0;
+                default -> throw new UnsupportedOperationException(compare.getResult().name());
+            };
+
+            if (!match) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
