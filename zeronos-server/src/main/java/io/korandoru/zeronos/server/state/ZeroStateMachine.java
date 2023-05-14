@@ -161,7 +161,8 @@ public class ZeroStateMachine extends BaseStateMachine {
     private boolean applyCompares(ReadTxn readTxn, List<Compare> compareList, long revision)
             throws InvalidProtocolBufferException {
         for (Compare compare : compareList) {
-            final RangeRequest req = RangeRequest.newBuilder().setKey(compare.getKey()).build();
+            final RangeRequest req =
+                    RangeRequest.newBuilder().setKey(compare.getKey()).build();
             final RangeResponse resp = range(readTxn, req, revision);
             if (!applyCompare(compare, resp.getKvsList())) {
                 return false;
@@ -179,21 +180,25 @@ public class ZeroStateMachine extends BaseStateMachine {
 
         final Comparator<ByteString> comparator = ByteString.unsignedLexicographicalComparator();
         for (KeyValue kv : kvs) {
-            final int result = switch (compare.getTarget()) {
-                case VERSION -> Long.compare(kv.getVersion(), compare.getVersion());
-                case VALUE -> comparator.compare(kv.getValue(), compare.getValue());
-                default -> throw new UnsupportedOperationException(compare.getTarget().name());
-            };
+            final int result =
+                    switch (compare.getTarget()) {
+                        case VERSION -> Long.compare(kv.getVersion(), compare.getVersion());
+                        case VALUE -> comparator.compare(kv.getValue(), compare.getValue());
+                        default -> throw new UnsupportedOperationException(
+                                compare.getTarget().name());
+                    };
 
-            final boolean match = switch (compare.getResult()) {
-                case EQUAL -> result == 0;
-                case GREATER -> result > 0;
-                case LESS -> result < 0;
-                case NOT_EQUAL -> result != 0;
-                case GREATER_OR_EQUAL -> result >= 0;
-                case LESS_OR_EQUAL -> result <= 0;
-                default -> throw new UnsupportedOperationException(compare.getResult().name());
-            };
+            final boolean match =
+                    switch (compare.getResult()) {
+                        case EQUAL -> result == 0;
+                        case GREATER -> result > 0;
+                        case LESS -> result < 0;
+                        case NOT_EQUAL -> result != 0;
+                        case GREATER_OR_EQUAL -> result >= 0;
+                        case LESS_OR_EQUAL -> result <= 0;
+                        default -> throw new UnsupportedOperationException(
+                                compare.getResult().name());
+                    };
 
             if (!match) {
                 return false;
@@ -205,14 +210,24 @@ public class ZeroStateMachine extends BaseStateMachine {
 
     @Override
     public CompletableFuture<Message> query(Message request) {
-        final List<RequestOp> requestList;
+        final TxnRequest txnRequest;
         try {
-            final TxnRequest.Builder req = TxnRequest.newBuilder();
-            req.mergeFrom(request.getContent());
-            requestList = req.getSuccessList();
+            final TxnRequest.Builder builder = TxnRequest.newBuilder();
+            builder.mergeFrom(request.getContent());
+            txnRequest = builder.build();
         } catch (InvalidProtocolBufferException e) {
             return CompletableFuture.failedFuture(e);
         }
+
+        final TermIndex termIndex = getLastAppliedTermIndex();
+
+        final boolean success;
+        try (final ReadTxn readTxn = backend.readTxn()) {
+            success = applyCompares(readTxn, txnRequest.getCompareList(), termIndex.getIndex());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+        final List<RequestOp> requestList = success ? txnRequest.getSuccessList() : txnRequest.getFailureList();
 
         for (RequestOp requestOp : requestList) {
             if (!requestOp.hasRequestRange()) {
@@ -222,7 +237,6 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         final List<ResponseOp> responseOps = new ArrayList<>();
-        final TermIndex termIndex = getLastAppliedTermIndex();
 
         try (final ReadTxn readTxn = backend.readTxn()) {
             for (RequestOp requestOp : requestList) {
@@ -235,8 +249,10 @@ public class ZeroStateMachine extends BaseStateMachine {
             return CompletableFuture.failedFuture(e);
         }
 
-        final TxnResponse resp =
-                TxnResponse.newBuilder().addAllResponses(responseOps).build();
+        final TxnResponse resp = TxnResponse.newBuilder()
+                .setSucceeded(success)
+                .addAllResponses(responseOps)
+                .build();
         return CompletableFuture.completedFuture(Message.valueOf(resp));
     }
 
@@ -244,14 +260,22 @@ public class ZeroStateMachine extends BaseStateMachine {
     public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
         final RaftProtos.LogEntryProto entry = trx.getLogEntry();
 
-        final List<RequestOp> requestList;
+        final TxnRequest txnRequest;
         try {
-            final TxnRequest.Builder req = TxnRequest.newBuilder();
-            req.mergeFrom(entry.getStateMachineLogEntry().getLogData());
-            requestList = req.getSuccessList();
+            final TxnRequest.Builder builder = TxnRequest.newBuilder();
+            builder.mergeFrom(entry.getStateMachineLogEntry().getLogData());
+            txnRequest = builder.build();
         } catch (InvalidProtocolBufferException e) {
             return CompletableFuture.failedFuture(e);
         }
+
+        final boolean success;
+        try (final ReadTxn readTxn = backend.readTxn()) {
+            success = applyCompares(readTxn, txnRequest.getCompareList(), entry.getIndex());
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+        final List<RequestOp> requestList = success ? txnRequest.getSuccessList() : txnRequest.getFailureList();
 
         final List<ResponseOp> responseOps = new ArrayList<>();
         final AtomicLong sub = new AtomicLong();
@@ -294,8 +318,10 @@ public class ZeroStateMachine extends BaseStateMachine {
         }
 
         updateLastAppliedTermIndex(entry.getTerm(), entry.getIndex());
-        final TxnResponse resp =
-                TxnResponse.newBuilder().addAllResponses(responseOps).build();
+        final TxnResponse resp = TxnResponse.newBuilder()
+                .setSucceeded(success)
+                .addAllResponses(responseOps)
+                .build();
         return CompletableFuture.completedFuture(Message.valueOf(resp));
     }
 }
